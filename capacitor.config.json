@@ -1,0 +1,12 @@
+{
+  "appId": "com.arcfieldstudios.citystack",
+  "appName": "City Stack",
+  "webDir": "www",
+  "backgroundColor": "#8fc4e8",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#8fc4e8"
+  }
+}
