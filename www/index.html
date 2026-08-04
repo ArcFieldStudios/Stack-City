@@ -52,6 +52,106 @@
   .lvl-btn.unlock-all { background:linear-gradient(90deg,rgba(255,180,80,.32),rgba(255,120,180,.28));
     border-color:rgba(255,200,120,.6); }
   .lvl-btn.unlock-all .n { color:#ffd479; }
+  .res-btn-hint, .res-menu-btn { display:inline-block; padding:11px 26px; font-size:11px;
+    letter-spacing:3px; font-weight:600; color:#fff; background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.32); border-radius:999px; min-width:200px; text-align:center;
+    font-family:inherit; }
+  .res-btn-hint { margin-top:22px; animation:pulse 1.7s ease-in-out infinite; }
+  .res-menu-btn { pointer-events:auto; margin-top:10px; cursor:pointer; }
+  #btnUseHearts { pointer-events:auto; margin-top:10px; cursor:pointer;
+    background:rgba(255,80,110,.25); border-color:rgba(255,120,140,.6); display:none; }
+  #btnUseHearts.show { display:inline-block; }
+  #btnUseHearts.disabled { pointer-events:none; cursor:default; opacity:.55;
+    background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.22); color:rgba(255,255,255,.55); }
+  #btnUseHearts.disabled .h { color:rgba(255,255,255,.4); }
+  #btnUseHearts .h { color:#ff6a80; margin-right:6px; }
+
+  #heartBadge { position:fixed; top:calc(20px + env(safe-area-inset-top)); right:18px;
+    z-index:30; display:none; align-items:center; gap:5px; padding:7px 13px;
+    background:rgba(14,22,40,.55); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.24); border-radius:999px;
+    color:#fff; font-size:12px; font-weight:700; letter-spacing:1px;
+    text-shadow:0 1px 6px rgba(0,0,0,.35); pointer-events:none; }
+  #heartBadge.show { display:inline-flex; }
+  #heartBadge .heart { color:#ff5a70; font-size:14px; line-height:1;
+    filter:drop-shadow(0 0 4px rgba(255,90,112,.5)); }
+  #btnHeartPlus { pointer-events:auto; margin-left:5px; padding:0; width:20px; height:20px;
+    border-radius:50%; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
+    color:#fff; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; padding-bottom:2px; }
+  #btnHeartPlus:hover { background:rgba(255,255,255,.32); }
+
+  /* Title echoes the tap-hint's language: uppercase, light, widely tracked, soft shadow —
+     just scaled up. The trailing letter-space is cancelled with text-indent so the wide
+     tracking doesn't push each line off-centre. */
+  .menu-title { position:absolute; top:calc(76px + env(safe-area-inset-top)); left:0; right:0;
+    text-align:center; font-size:min(14vw,60px); font-weight:300; letter-spacing:.15em;
+    text-indent:.15em; color:#fff; text-shadow:0 3px 26px rgba(0,0,0,.5);
+    line-height:.9; pointer-events:none; }
+  .menu-title .brand { display:block; font-weight:300; letter-spacing:.15em; }
+  /* The "I" of CITY is drawn as the Milad Tower — shaft, pod, antenna — sitting on the baseline. */
+  .menu-title .milad-i { display:inline-block; width:.40em; height:.88em; margin:0 .03em;
+    vertical-align:baseline; position:relative; top:.02em; }
+  .menu-title .milad-i svg { display:block; width:100%; height:100%; fill:currentColor; }
+
+  #btnNoAds { position:fixed; top:calc(20px + env(safe-area-inset-top)); left:70px; z-index:30;
+    padding:7px 16px 7px 19px; font-size:10px; letter-spacing:3px; font-weight:600;
+    background:rgba(14,22,40,.42); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.22); border-radius:999px;
+    color:#fff; cursor:pointer; font-family:inherit; display:none;
+    text-shadow:0 2px 10px rgba(0,0,0,.45); }
+  #btnNoAds.show { display:inline-block; }
+  #btnNoAds:hover { background:rgba(14,22,40,.65); }
+
+  #btnWatchAd { pointer-events:auto; margin-top:10px; cursor:pointer;
+    background:rgba(90,180,255,.22); border-color:rgba(120,200,255,.55); display:none; }
+  #btnWatchAd.show { display:inline-block; }
+  #btnGetHearts { pointer-events:auto; margin-top:10px; cursor:pointer;
+    background:linear-gradient(90deg,rgba(255,120,140,.32),rgba(255,180,90,.28));
+    border-color:rgba(255,150,150,.6); display:none; }
+  #btnGetHearts.show { display:inline-block; }
+  #btnGetHearts .h { color:#ff6a80; margin-right:6px; }
+
+  #shopOverlay { position:fixed; inset:0; z-index:80; background:rgba(4,10,22,.85);
+    backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
+  #shopOverlay.show { display:flex; }
+  #shopPanel { background:rgba(20,28,50,.95); border:1px solid rgba(255,255,255,.18);
+    border-radius:20px; padding:22px 20px; max-width:340px; width:100%; text-align:center; color:#fff; }
+  #shopPanel h2 { font-size:11px; letter-spacing:5px; opacity:.6; font-weight:600; margin-bottom:6px; }
+  #shopPanel h1 { font-size:22px; letter-spacing:5px; font-weight:200; margin-bottom:6px; }
+  #shopPanel .heart-big { color:#ff5a70; font-size:32px;
+    filter:drop-shadow(0 0 8px rgba(255,90,112,.5)); margin-bottom:14px; display:block; }
+  .shop-btn { display:block; width:100%; padding:12px 18px; margin-top:10px; font-size:12px;
+    letter-spacing:2px; font-weight:700; color:#fff; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.28); border-radius:14px; cursor:pointer; font-family:inherit;
+    display:flex; justify-content:space-between; align-items:center; text-align:left; }
+  .shop-btn .price { color:#ffd479; }
+  .shop-btn.ad { background:rgba(90,180,255,.18); border-color:rgba(120,200,255,.5); }
+  .shop-btn.ad .price { color:#8fd0ff; }
+  #shopClose { margin-top:16px; background:none; border:none; color:rgba(255,255,255,.5);
+    font-size:11px; letter-spacing:3px; cursor:pointer; font-family:inherit; padding:6px; }
+
+  #toastMsg { position:fixed; top:calc(80px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+    z-index:60; padding:10px 20px; background:rgba(14,22,40,.75); backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.28); border-radius:999px;
+    color:#fff; font-size:12px; font-weight:700; letter-spacing:2px; opacity:0; pointer-events:none;
+    text-shadow:0 1px 6px rgba(0,0,0,.4); }
+  #toastMsg.show { animation:toastPop 2.4s ease-out forwards; }
+  @keyframes toastPop { 0%{opacity:0;transform:translate(-50%,-8px);}
+    12%{opacity:1;transform:translate(-50%,0);} 78%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-6px);} }
+
+  #adOverlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.9);
+    display:none; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; }
+  #adOverlay.show { display:flex; }
+  #adOverlay .placeholder { width:min(80vw,320px); height:min(45vh,240px); border:1px dashed rgba(255,255,255,.3);
+    border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#222,#111); font-size:12px; letter-spacing:4px; opacity:.6; margin-bottom:24px; }
+  #adOverlay .title { font-size:14px; letter-spacing:3px; opacity:.7; margin-bottom:8px; }
+  #adOverlay #adTimer { font-size:44px; font-weight:200; margin-bottom:18px; }
+  #adSkip { padding:12px 30px; font-size:12px; letter-spacing:3px; font-weight:700; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.4); border-radius:999px;
+    cursor:pointer; font-family:inherit; }
+  #adSkip:disabled { opacity:.4; cursor:default; }
   .back { margin-top:16px; font-size:11px; letter-spacing:4px; color:rgba(255,255,255,.55); cursor:pointer; }
 
   .optgroup { text-align:left; margin:12px 2px; }
@@ -80,12 +180,24 @@
   .screen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; pointer-events:none; opacity:0; transition:opacity .5s; padding:0 18px calc(18px + env(safe-area-inset-bottom)); z-index:20; }
   .screen.visible { opacity:1; }
+
+  #splashScreen { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at center,#1c2c4a 0%,#080f1e 100%);
+    opacity:0; pointer-events:none; animation:splashFade 3.4s ease-in-out forwards; }
+  #splashInner { text-align:center; color:#fff; animation:splashScale 3.4s ease-in-out forwards; }
+  #splashName { font-size:min(11vw,54px); font-weight:200; letter-spacing:9px; line-height:1.05;
+    text-shadow:0 4px 40px rgba(140,190,255,.35); }
+  #splashName .studios { display:inline-block; letter-spacing:14px; margin-top:8px; }
+  #splashName .accent { color:#ffd479; font-weight:400; }
+  #splashSub { font-size:10px; letter-spacing:8px; opacity:.45; margin-top:28px; text-transform:uppercase; }
+  @keyframes splashFade { 0%{opacity:0;} 18%{opacity:1;} 78%{opacity:1;} 100%{opacity:0;} }
+  @keyframes splashScale { 0%{transform:scale(.96);} 30%{transform:scale(1);} 100%{transform:scale(1.04);} }
   .eyebrow { font-size:12px; letter-spacing:7px; color:rgba(255,255,255,.9); margin-bottom:10px; font-weight:600;
     text-shadow:0 2px 10px rgba(0,0,0,.45); }
-  .title { font-size:min(13vw,68px); font-weight:200; letter-spacing:8px; color:#fff;
-    text-shadow:0 6px 40px rgba(0,0,0,.5); line-height:1; }
+  .title { font-size:min(9vw,44px); font-weight:200; letter-spacing:6px; color:#fff;
+    text-shadow:0 6px 40px rgba(0,0,0,.5); line-height:1.05; }
   .brand { font-weight:800; letter-spacing:4px; }
-  .subtitle { margin-top:12px; font-size:13px; letter-spacing:3px; color:rgba(255,255,255,.95); font-weight:400;
+  .subtitle { margin-top:10px; font-size:11px; letter-spacing:2.5px; color:rgba(255,255,255,.9); font-weight:400;
     text-shadow:0 2px 10px rgba(0,0,0,.4); }
   .tap-hint { margin-top:5vh; font-size:12px; letter-spacing:6px; color:#fff; font-weight:600;
     animation:pulse 1.7s ease-in-out infinite; text-shadow:0 2px 10px rgba(0,0,0,.45); }
@@ -140,6 +252,27 @@
 <canvas id="game"></canvas>
 
 <div id="menuBtn" class="no-tap"><span></span></div>
+<button id="btnNoAds" class="no-tap">NO ADS</button>
+<div id="heartBadge" class="no-tap"><span class="heart">♥</span><span id="heartCount">5</span><button id="btnHeartPlus" class="no-tap">+</button></div>
+<div id="toastMsg" class="no-tap"></div>
+<div id="adOverlay" class="no-tap">
+  <div class="title">SPONSORED · REWARDED AD</div>
+  <div id="adTimer">5</div>
+  <div class="placeholder">AD PLACEHOLDER</div>
+  <button id="adSkip">WATCHING…</button>
+</div>
+<div id="shopOverlay" class="no-tap">
+  <div id="shopPanel">
+    <h2>OUT OF HEARTS</h2>
+    <span class="heart-big">♥</span>
+    <h1>GET HEARTS</h1>
+    <button class="shop-btn ad" data-heart="ad"><span>WATCH AD</span><span class="price">+1 ♥</span></button>
+    <button class="shop-btn" data-heart="5"><span>5 HEARTS</span><span class="price">$0.99</span></button>
+    <button class="shop-btn" data-heart="15"><span>15 HEARTS</span><span class="price">$1.99</span></button>
+    <button class="shop-btn" data-heart="40"><span>40 HEARTS</span><span class="price">$4.99</span></button>
+    <button id="shopClose">CANCEL</button>
+  </div>
+</div>
 
 <div class="ui" style="padding-top:env(safe-area-inset-top)">
   <div id="levelTag"></div>
@@ -156,12 +289,21 @@
     <button class="btn primary" id="btnResume">RESUME</button>
     <button class="btn" id="btnLevels">SELECT LEVEL</button>
     <button class="btn" id="btnRestart">RESTART LEVEL</button>
+    <button class="btn" id="btnMainMenu">MAIN MENU</button>
   </div>
   <div class="panel" id="pauseLevels" style="display:none">
     <h2>CHOOSE YOUR CITY</h2>
     <h1>LEVELS</h1>
     <div id="levelList"></div>
     <div class="back" id="btnBack">&#8592; BACK</div>
+  </div>
+  <div class="panel" id="pauseMenuOpts" style="display:none">
+    <h2>CITY STACK</h2>
+    <h1>MENU</h1>
+    <button class="btn primary" id="btnOptLevels">SELECT LEVEL</button>
+    <button class="btn" id="btnOptFree">FREE PLAY</button>
+    <button class="btn" id="btnOptNoAds">NO ADS</button>
+    <div class="back" id="btnOptBack">← BACK</div>
   </div>
   <div class="panel" id="pauseFree" style="display:none">
     <h2>FREE PLAY</h2>
@@ -172,11 +314,18 @@
   </div>
 </div>
 
-<div class="screen visible" id="menuScreen">
-  <div class="eyebrow">WELCOME TO</div>
-  <div class="title"><span class="brand">CITY&nbsp;STACK</span></div>
-  <div class="subtitle">BUILD CITY ICONS, ONE FLOOR AT A TIME</div>
-  <div class="dots" id="menuDots"></div>
+<div id="splashScreen">
+  <div id="splashInner">
+    <div id="splashName">ARC <span class="accent">FIELD</span><br><span class="studios">STUDIOS</span></div>
+    <div id="splashSub">Presents</div>
+  </div>
+</div>
+
+<div class="screen" id="menuScreen">
+  <div class="menu-title">
+    <span class="brand">C<span class="milad-i"><svg viewBox="0 0 26 100" aria-hidden="true"><path d="M4.5 100 L9.4 88.5 L16.6 88.5 L21.5 100 Z"/><path d="M9.4 88.5 L11 46 L15 46 L16.6 88.5 Z"/><ellipse cx="13" cy="38" rx="7.4" ry="8.6"/><path d="M12.1 30 L12.1 1.5 L13.9 1.5 L13.9 30 Z"/></svg></span>TY</span>
+    <span class="brand">STACK</span>
+  </div>
   <div class="tap-hint">TAP TO START</div>
 </div>
 
@@ -200,7 +349,11 @@
   <div id="matchLabel">ACCURACY</div>
   <div id="matchGrade">&mdash;</div>
   <div class="ready-msg" id="readyMsg" style="display:none">NOW YOU'RE READY TO MOVE ON<br>TO THE BIG CITIES &mdash; READY?</div>
-  <div class="tap-hint" id="resHint">TAP TO CONTINUE</div>
+  <div class="res-btn-hint" id="resHint">TAP TO CONTINUE</div>
+  <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h">♥</span>USE HEART</button>
+  <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h">♥</span>GET HEARTS</button>
+  <button class="no-tap res-menu-btn" id="btnWatchAd">WATCH AD +♥</button>
+  <button class="no-tap res-menu-btn" id="btnResMainMenu">MAIN MENU</button>
 </div>
 
 <div class="screen" id="completeScreen">
@@ -462,17 +615,63 @@ const FREE_LEVEL={ name:'FREE PLAY', city:'', metresTxt:'', bg:'free', crown:'no
 let curLevel=0, isFree=false;
 
 const SAVE_KEY='citystack_progress_v1';
+const MAX_HEARTS = 5;
 function loadProgress(){
   try{ const raw=localStorage.getItem(SAVE_KEY); if(raw){ const p=JSON.parse(raw);
-    return { highestUnlocked: p.highestUnlocked|0, unlockedAll: !!p.unlockedAll }; }
+    return { highestUnlocked: p.highestUnlocked|0, unlockedAll: !!p.unlockedAll,
+      lastLevel: p.lastLevel|0,
+      hearts: (p.hearts==null?MAX_HEARTS:Math.max(0,p.hearts|0)),
+      lastHeartDay: p.lastHeartDay||'',
+      noAds: !!p.noAds }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
 function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
 function unlockLevel(i){ if(i>progress.highestUnlocked){ progress.highestUnlocked=i; saveProgress(); } }
 function unlockAllLevels(){ progress.unlockedAll=true; saveProgress(); }
+function setLastLevel(i){ if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); } }
+function updateHeartUI(){ const el=S('heartCount'); if(el) el.textContent=progress.hearts; }
+function showHearts(){ updateHeartUI(); S('heartBadge').classList.add('show'); }
+function hideHearts(){ S('heartBadge').classList.remove('show'); }
+function consumeHeart(){ if(progress.hearts<=0) return false;
+  progress.hearts--; saveProgress(); updateHeartUI(); return true; }
+function grantHeart(){ if(progress.hearts>=MAX_HEARTS) return false;
+  progress.hearts++; saveProgress(); updateHeartUI(); return true; }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function checkDailyHeart(){
+  const today=todayStr();
+  if(progress.lastHeartDay!==today){
+    progress.lastHeartDay=today;
+    const gained = progress.hearts<MAX_HEARTS;
+    if(gained) progress.hearts=Math.min(MAX_HEARTS, progress.hearts+1);
+    saveProgress(); updateHeartUI();
+    if(gained) toast('+1 DAILY HEART ♥');
+  }
+}
+function toast(msg){
+  const el=S('toastMsg'); if(!el) return;
+  el.textContent=msg; el.classList.remove('show');
+  void el.offsetWidth;  // restart animation
+  el.classList.add('show');
+}
+function playAdForHeart(cb){
+  if(progress.hearts>=MAX_HEARTS){ toast('HEARTS ALREADY FULL'); return; }
+  const overlay=S('adOverlay'); const timerEl=S('adTimer'); const btn=S('adSkip');
+  let sec=5; timerEl.textContent=sec; btn.disabled=true; btn.textContent='WATCHING…';
+  overlay.classList.add('show');
+  const iv=setInterval(()=>{ sec--; timerEl.textContent=Math.max(0,sec);
+    if(sec<=0){ clearInterval(iv); btn.disabled=false; btn.textContent='CLAIM ♥'; }
+  }, 1000);
+  btn.onclick=e=>{ e.stopPropagation();
+    if(btn.disabled) return;
+    clearInterval(iv);
+    overlay.classList.remove('show');
+    grantHeart(); toast('+1 HEART ♥');
+    if(cb) cb();
+  };
+}
 function L(){ return isFree ? FREE_LEVEL : LEVELS[curLevel]; }
 const FH=()=>L().floorH;
 
@@ -1466,6 +1665,7 @@ function refreshMover(){ mover.poly = translate(mover.basePoly, mover.x-mover.ic
 /* ==================== PLACE ==================== */
 function place(){
   if(!mover) return;
+  if(!started) hideHearts();
   started=true;
   const A=mover.axis, ai=A==='x'?0:1;
   const icx=mover.icx, icz=mover.icz;
@@ -1573,6 +1773,12 @@ function renderTower(cv,blocks,withCrown){
 /* ==================== RESULT ==================== */
 function finish(won){
   state='result'; mover=null; totalPerfects+=perfects; tutorHide();
+  showHearts();
+  const failedMid = !won && !isFree && stack.length>0 && stack.length<=N;
+  S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
+  S('btnUseHearts').innerHTML = '<span class="h">♥</span>USE HEART';
+  S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
+  S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
   if(won) sndWin();
   const isTutorialWin = curLevel===0 && won;
   S('compareWrap').style.display = isTutorialWin ? 'none' : 'flex';
@@ -1617,11 +1823,12 @@ function finishFree(){
 }
 
 function updateHUD(){ scoreEl.textContent=score; progEl.textContent = isFree ? 'FREE PLAY' : (score+' / '+N); }
-function showHUD(){ scoreEl.style.opacity=1; progEl.style.opacity=1; levelTagEl.style.opacity=1; S('menuBtn').classList.add('show'); }
+function showHUD(){ scoreEl.style.opacity=1; progEl.style.opacity=1; levelTagEl.style.opacity=1; S('menuBtn').classList.add('show'); S('btnNoAds').classList.remove('show'); }
 function hideHUD(){ scoreEl.style.opacity=0; progEl.style.opacity=0; levelTagEl.style.opacity=0; }
+function showNoAdsIfEligible(){ if(!progress.noAds) S('btnNoAds').classList.add('show'); }
 
 function renderDots(id,active){
-  const el=S(id); el.innerHTML='';
+  const el=S(id); if(!el) return; el.innerHTML='';
   for(let i=0;i<LEVELS.length;i++){ const d=document.createElement('div'); d.className='dot';
     if(i<active)d.classList.add('done'); if(i===active)d.classList.add('active'); el.appendChild(d); }
 }
@@ -1633,6 +1840,7 @@ function showPanel(which){
   S('pauseMain').style.display = which==='main'?'block':'none';
   S('pauseLevels').style.display = which==='levels'?'block':'none';
   S('pauseFree').style.display = which==='free'?'block':'none';
+  S('pauseMenuOpts').style.display = which==='menuOpts'?'block':'none';
 }
 function closePanel(){ paused=false; S('pausePanel').classList.remove('show'); }
 function openPause(){ if(state!=='playing') return; paused=true; showPanel('main'); sndClick(); }
@@ -1653,7 +1861,7 @@ function buildLevelList(){
     if(!unlocked){ b.classList.add('locked');
       b.onclick=e=>{ e.stopPropagation(); sndClick(); };
     } else {
-      b.onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); isFree=false; curLevel=i; showIntro(); };
+      b.onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); isFree=false; curLevel=i; setLastLevel(i); showIntro(); };
     }
     el.appendChild(b);
   });
@@ -1695,9 +1903,78 @@ function buildFreeOpts(){
     wrap.appendChild(row); body.appendChild(wrap);
   });
 }
-S('menuBtn').onclick=e=>{ e.stopPropagation(); if(state==='playing') openPause(); else if(state==='menu'||state==='intro') openLevelSelect(true); };
+S('menuBtn').onclick=e=>{ e.stopPropagation();
+  if(state==='playing') openPause();
+  else if(state==='menu'||state==='intro'){ paused=true; showPanel('menuOpts'); sndClick(); }
+};
 S('btnResume').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
 S('btnRestart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); reset(); };
+S('btnMainMenu').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); showMenu(); };
+S('btnResMainMenu').onclick=e=>{ e.stopPropagation(); sndClick(); S('resultScreen').classList.remove('visible');
+  setTimeout(()=>showMenu(), 300); };
+function openShop(){ S('shopOverlay').classList.add('show'); }
+function closeShop(){ S('shopOverlay').classList.remove('show'); }
+S('btnGetHearts').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
+S('shopClose').onclick=e=>{ e.stopPropagation(); sndClick(); closeShop(); };
+document.querySelectorAll('.shop-btn').forEach(btn=>{
+  btn.onclick=e=>{ e.stopPropagation(); sndClick();
+    const kind=btn.getAttribute('data-heart');
+    if(kind==='ad'){ closeShop(); playAdForHeart(()=>{
+      // refresh result-screen buttons if still on that screen
+      if(state==='result'){
+        const failedMid = stack.length>0 && stack.length<=N && S('resHint').textContent==='TAP TO RETRY';
+        S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
+        S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
+        S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+      }
+    }); return; }
+    // Buy tiers — placeholder for Google Play Billing; awards hearts locally for now.
+    const n=parseInt(kind,10);
+    if(confirm('This will be a real Play Store purchase once published.\n\nUnlock '+n+' hearts for free while testing?')){
+      progress.hearts=Math.min(999, progress.hearts+n); saveProgress(); updateHeartUI();
+      toast('+'+n+' HEARTS ♥'); closeShop();
+      if(state==='result'){
+        const failedMid = stack.length>0 && stack.length<=N && S('resHint').textContent==='TAP TO RETRY';
+        S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
+        S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
+        S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+      }
+    }
+  };
+});
+S('btnWatchAd').onclick=e=>{ e.stopPropagation(); sndClick();
+  playAdForHeart(()=>{ S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+    const canContinue = state==='result' && progress.hearts>0;
+    S('btnUseHearts').classList.toggle('show', canContinue && S('resHint').textContent==='TAP TO RETRY');
+  });
+};
+function buyNoAds(){
+  if(progress.noAds){ toast('ADS ALREADY REMOVED'); return; }
+  if(confirm('Remove ads?\n\nWill be a real $2.99 Play Store purchase once published. Unlock for free while testing?')){
+    progress.noAds=true; saveProgress();
+    toast('NO ADS UNLOCKED');
+    S('btnNoAds').classList.remove('show');
+  }
+}
+S('btnNoAds').onclick=e=>{ e.stopPropagation(); sndClick(); buyNoAds(); };
+S('btnOptLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=true; buildLevelList(); showPanel('levels'); };
+S('btnOptFree').onclick=e=>{ e.stopPropagation(); sndClick(); buildFreeOpts(); showPanel('free'); };
+S('btnOptNoAds').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); buyNoAds(); };
+S('btnOptBack').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
+S('btnHeartPlus').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
+S('btnUseHearts').onclick=e=>{ e.stopPropagation();
+  if(progress.hearts<=0) return;
+  sndClick(); consumeHeart();
+  S('btnUseHearts').classList.remove('show');
+  S('resultScreen').classList.remove('visible');
+  transitioning=true;
+  setTimeout(()=>{
+    transitioning=false;
+    // Resume mid-tower: keep stack as-is, remove any debris from the failed drop,
+    // spawn a fresh mover for the next floor and go back to playing.
+    debris=[]; state='playing'; hideHearts(); showHUD(); spawnMover();
+  }, 320);
+};
 S('btnLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=false; buildLevelList(); showPanel('levels'); };
 S('btnBack').onclick=e=>{ e.stopPropagation(); sndClick(); if(levelsFromMenu) closePanel(); else showPanel('main'); };
 S('btnFreeBack').onclick=e=>{ e.stopPropagation(); sndClick(); showPanel('levels'); };
@@ -1707,8 +1984,21 @@ S('btnFreeStart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel();
   state='playing'; showHUD(); reset(); };
 
 /* ==================== FLOW ==================== */
+function showMenu(){
+  isFree=false; autoTutorial=false; paused=false; transitioning=false;
+  const i = Math.max(0, Math.min(LEVELS.length-1, progress.lastLevel|0));
+  curLevel = i;
+  ['introScreen','resultScreen','completeScreen'].forEach(id=>S(id).classList.remove('visible'));
+  S('pausePanel').classList.remove('show');
+  hideHUD(); S('menuBtn').classList.add('show');
+  showHearts(); showNoAdsIfEligible();
+  state='menu';
+  reset();
+  S('menuScreen').classList.add('visible');
+}
 function showIntro(){
   isFree=false; setLevelN(); state='intro'; S('menuBtn').classList.add('show');
+  setLastLevel(curLevel); showHearts();
   ['resultScreen','completeScreen','menuScreen'].forEach(s=>S(s).classList.remove('visible'));
   hideHUD();
   if(curLevel===0){
@@ -1739,7 +2029,7 @@ function tap(e){
   // dropping a floor needs to work across the whole screen.
   if(state!=='playing' && e && typeof e.clientY==='number' && e.clientY < H*0.5) return;
   const now=performance.now(); if(now-lockTap<160) return; lockTap=now; audio();
-  if(state==='menu'){ S('menuScreen').classList.remove('visible'); isFree=false; curLevel=0; totalPerfects=0;
+  if(state==='menu'){ S('menuScreen').classList.remove('visible'); isFree=false; totalPerfects=0;
     transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
   else if(state==='intro'){ startPlaying(); }
   else if(state==='playing'){ place(); }
@@ -1752,11 +2042,14 @@ function tap(e){
     else if(curLevel>=LEVELS.length-1){ unlockLevel(curLevel); state='complete';
       S('completeStats').innerHTML='TOTAL PERFECT PLACEMENTS&nbsp;<b>'+totalPerfects+'</b>';
       transitioning=true; setTimeout(()=>{ transitioning=false; S('completeScreen').classList.add('visible'); },520);
+    } else if(autoTutorial && curLevel===0){
+      unlockLevel(1); autoTutorial=false; state='menu'; curLevel=0; hideHUD();
+      transitioning=true;
+      setTimeout(()=>{ transitioning=false; renderDots('menuDots',-1); S('menuScreen').classList.add('visible'); },520);
     } else { unlockLevel(curLevel+1); curLevel++; transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
   }
-  else if(state==='complete'){ S('completeScreen').classList.remove('visible'); state='menu'; curLevel=0;
-    transitioning=true;
-    setTimeout(()=>{ transitioning=false; renderDots('menuDots',-1); S('menuScreen').classList.add('visible'); },520); }
+  else if(state==='complete'){ S('completeScreen').classList.remove('visible');
+    transitioning=true; setTimeout(()=>{ transitioning=false; showMenu(); },520); }
 }
 window.addEventListener('pointerdown',tap);
 window.addEventListener('keydown',e=>{
@@ -1775,9 +2068,9 @@ function drawHologram(){
     const p=proj(q[0],Y,q[1]);
     minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); } }
   minY -= crownHeight()*1.08;
-  const hFrac = MOBILE?0.34:0.50, wFrac = MOBILE?0.20:0.30;
+  const hFrac = MOBILE?0.26:0.50, wFrac = MOBILE?0.16:0.30;
   const sc=Math.min((H*hFrac)/(maxY-minY),(W*wFrac)/(maxX-minX));
-  const ox=MOBILE?W*0.20:W*0.17, oy=MOBILE?H*0.71:H*0.74;
+  const ox=MOBILE?W*0.18:W*0.17, oy=MOBILE?H*0.76:H*0.74;
   const rad = MOBILE?0.13:0.18, ell1=MOBILE?0.11:0.15, ell1b=MOBILE?0.033:0.045, ell2=MOBILE?0.065:0.085, ell2b=MOBILE?0.02:0.026;
   const pulse=.5+.5*Math.sin(performance.now()/650);
   ctx.save();
@@ -1864,8 +2157,22 @@ function frame(now){
 }
 
 /* ==================== BOOT ==================== */
-resize(); reset(); state='menu'; renderDots('menuDots',-1); S('menuBtn').classList.add('show');
+let autoTutorial=false;
+resize(); reset(); state='menu'; renderDots('menuDots',-1);
 requestAnimationFrame(frame);
+
+// Splash fades over 3.4s; on completion, route based on tutorial progress.
+setTimeout(()=>{
+  const splash=S('splashScreen'); if(splash) splash.style.display='none';
+  checkDailyHeart();
+  const tutorialDone = progress.highestUnlocked>=1 || progress.unlockedAll;
+  if(tutorialDone){
+    showMenu();
+  } else {
+    autoTutorial=true; isFree=false; curLevel=0; totalPerfects=0;
+    S('menuBtn').classList.add('show'); showIntro();
+  }
+}, 3400);
 
 })();
 </script>
