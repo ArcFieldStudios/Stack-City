@@ -45,6 +45,13 @@
   .lvl-btn small { display:block; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.55); margin-top:4px; font-weight:400; }
   .lvl-btn .n { font-size:11px; color:#ffe08a; letter-spacing:2px; }
   .lvl-btn.free { background:linear-gradient(90deg,rgba(255,120,120,.25),rgba(120,180,255,.25)); border-color:rgba(255,224,138,.5); }
+  .lvl-btn.locked { opacity:.45; cursor:not-allowed; }
+  .lvl-btn.locked .n { color:rgba(255,255,255,.55); }
+  .lvl-btn.locked small { color:rgba(255,255,255,.4); }
+  .lvl-btn .lock { font-size:14px; margin-right:6px; opacity:.85; }
+  .lvl-btn.unlock-all { background:linear-gradient(90deg,rgba(255,180,80,.32),rgba(255,120,180,.28));
+    border-color:rgba(255,200,120,.6); }
+  .lvl-btn.unlock-all .n { color:#ffd479; }
   .back { margin-top:16px; font-size:11px; letter-spacing:4px; color:rgba(255,255,255,.55); cursor:pointer; }
 
   .optgroup { text-align:left; margin:12px 2px; }
@@ -453,6 +460,19 @@ let freeHues={};
 const FREE_LEVEL={ name:'FREE PLAY', city:'', metresTxt:'', bg:'free', crown:'none', floorH:20 };
 
 let curLevel=0, isFree=false;
+
+const SAVE_KEY='citystack_progress_v1';
+function loadProgress(){
+  try{ const raw=localStorage.getItem(SAVE_KEY); if(raw){ const p=JSON.parse(raw);
+    return { highestUnlocked: p.highestUnlocked|0, unlockedAll: !!p.unlockedAll }; }
+  }catch(e){}
+  return { highestUnlocked:0, unlockedAll:false };
+}
+function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
+let progress = loadProgress();
+function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
+function unlockLevel(i){ if(i>progress.highestUnlocked){ progress.highestUnlocked=i; saveProgress(); } }
+function unlockAllLevels(){ progress.unlockedAll=true; saveProgress(); }
 function L(){ return isFree ? FREE_LEVEL : LEVELS[curLevel]; }
 const FH=()=>L().floorH;
 
@@ -1428,10 +1448,10 @@ function spawnMover(){
   let speed;
   if(isFree){
     const sp=freeConfig.speed;
-    const base = sp==='slow' ? 1.9 : sp==='fast' ? 4.4 : sp==='random' ? (1.9+Math.random()*2.7) : 2.9;
-    speed = base + Math.min(i*0.03,2.2);
+    const base = sp==='slow' ? 2.6 : sp==='fast' ? 5.8 : sp==='random' ? (2.6+Math.random()*3.4) : 3.9;
+    speed = base + Math.min(i*0.045,3.2);
   } else {
-    speed = 2.7 + Math.min(i*0.075,7.5);
+    speed = 4.4 + Math.min(i*0.11,10);
   }
   const off = 340;
   mover={ i:i, axis:axis, dir:1, speed:speed, y:top.y+top.h, h:FH(), icx:ic[0], icz:ic[1],
@@ -1626,10 +1646,27 @@ function buildLevelList(){
   el.appendChild(free);
   LEVELS.forEach((lv,i)=>{
     const b=document.createElement('button'); b.className='btn lvl-btn';
-    b.innerHTML='<span>'+lv.name+'<small>'+lv.city+' \u00b7 '+lv.metresTxt+'</small></span><span class="n">0'+(i+1)+'</span>';
-    b.onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); isFree=false; curLevel=i; showIntro(); };
+    const unlocked = isLevelUnlocked(i);
+    const lockIcon = unlocked ? '' : '<span class="lock">\ud83d\udd12</span>';
+    const num = unlocked ? ('0'+(i+1)).slice(-2) : '\u2014';
+    b.innerHTML='<span>'+lockIcon+lv.name+'<small>'+lv.city+' \u00b7 '+lv.metresTxt+'</small></span><span class="n">'+num+'</span>';
+    if(!unlocked){ b.classList.add('locked');
+      b.onclick=e=>{ e.stopPropagation(); sndClick(); };
+    } else {
+      b.onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); isFree=false; curLevel=i; showIntro(); };
+    }
     el.appendChild(b);
   });
+  if(!progress.unlockedAll){
+    const u=document.createElement('button'); u.className='btn lvl-btn unlock-all';
+    u.innerHTML='<span>UNLOCK ALL LEVELS<small>SKIP THE GRIND \u00b7 PLAY ANY CITY</small></span><span class="n">\u2605</span>';
+    u.onclick=e=>{ e.stopPropagation(); sndClick();
+      if(confirm('Unlock all levels?\n\n(In the published app this will be a paid purchase via Google Play. For now it unlocks for free while testing.)')){
+        unlockAllLevels(); buildLevelList();
+      }
+    };
+    el.appendChild(u);
+  }
 }
 const FREE_UI={
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
@@ -1712,10 +1749,10 @@ function tap(e){
       setTimeout(()=>{ transitioning=false; state='playing'; showHUD(); reset(); },520); return; }
     const won=S('resHint').dataset.won==='1';
     if(!won){ transitioning=true; setTimeout(()=>{ transitioning=false; state='playing'; showHUD(); reset(); },520); }
-    else if(curLevel>=LEVELS.length-1){ state='complete';
+    else if(curLevel>=LEVELS.length-1){ unlockLevel(curLevel); state='complete';
       S('completeStats').innerHTML='TOTAL PERFECT PLACEMENTS&nbsp;<b>'+totalPerfects+'</b>';
       transitioning=true; setTimeout(()=>{ transitioning=false; S('completeScreen').classList.add('visible'); },520);
-    } else { curLevel++; transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
+    } else { unlockLevel(curLevel+1); curLevel++; transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
   }
   else if(state==='complete'){ S('completeScreen').classList.remove('visible'); state='menu'; curLevel=0;
     transitioning=true;
