@@ -1189,27 +1189,39 @@ function buildScene(key){
       c.fillStyle='rgba(255,240,210,.25)';
       for(let wy2=horizon-h+6;wy2<horizon-6;wy2+=10){ for(let wx=x+4;wx<x+w-4;wx+=9) c.fillRect(wx,wy2,4,5); }
       x+=w+5+Math.random()*10; }
-    // Azadi Tower — two curved, wide-splayed legs merging near the top into a solid crown
-    // block, with a pointed gothic arch gap between them, matching the real monument's
-    // wishbone silhouette instead of a plain trapezoid arch
-    const azx=W*.20, azw=110*u, azh=165*u;
-    c.fillStyle='#e9e4da';
-    c.beginPath();
-    c.moveTo(azx-azw*0.50,horizon);
-    c.quadraticCurveTo(azx-azw*0.46,horizon-azh*0.55, azx-azw*0.08,horizon-azh*0.94);
-    c.lineTo(azx-azw*0.02,horizon-azh*0.90);
-    c.quadraticCurveTo(azx-azw*0.28,horizon-azh*0.50, azx-azw*0.20,horizon);
-    c.closePath(); c.fill();
-    c.beginPath();
-    c.moveTo(azx+azw*0.50,horizon);
-    c.quadraticCurveTo(azx+azw*0.46,horizon-azh*0.55, azx+azw*0.08,horizon-azh*0.94);
-    c.lineTo(azx+azw*0.02,horizon-azh*0.90);
-    c.quadraticCurveTo(azx+azw*0.28,horizon-azh*0.50, azx+azw*0.20,horizon);
-    c.closePath(); c.fill();
-    c.fillStyle='#d6cfc2';
-    c.fillRect(azx-azw*0.13,horizon-azh-14*u,azw*0.26,18*u);
+    // Azadi Tower — thick, fluted, wide-splayed legs curving up to a pointed gothic arch,
+    // a solid neck where they merge, and a distinctly wider crown block on top with
+    // turquoise glass strips and cresting — modelled directly on reference photos rather
+    // than a plain thin arch
+    const azx=W*.20, azw=120*u, azh=170*u;
+    const azLerp=(a,b,t)=>a+(b-a)*t;
+    const legPt=(sign,f)=>({
+      sx: azx+sign*azLerp(0.52,0.16,f)*azw, sy: horizon,
+      cx: azx+sign*azLerp(0.48,0.26,f)*azw, cy: horizon-azLerp(0.58,0.52,f)*azh,
+      ex: azx+sign*azLerp(0.10,0.015,f)*azw, ey: horizon-azLerp(0.90,0.86,f)*azh,
+    });
+    [-1,1].forEach(sign=>{
+      const o=legPt(sign,0), inr=legPt(sign,1);
+      c.fillStyle='#e9e4da';
+      c.beginPath();
+      c.moveTo(o.sx,o.sy); c.quadraticCurveTo(o.cx,o.cy,o.ex,o.ey);
+      c.lineTo(inr.ex,inr.ey); c.quadraticCurveTo(inr.cx,inr.cy,inr.sx,inr.sy);
+      c.closePath(); c.fill();
+      c.strokeStyle='#c9c2b4'; c.lineWidth=1.1*u;
+      for(let i=1;i<5;i++){ const p=legPt(sign,i/5);
+        c.beginPath(); c.moveTo(p.sx,p.sy); c.quadraticCurveTo(p.cx,p.cy,p.ex,p.ey); c.stroke(); }
+    });
+    // neck — solid block where the legs merge, just below the crown
+    c.fillStyle='#e2ddd0';
+    c.fillRect(azx-azw*0.09,horizon-azh*0.98,azw*0.18,azh*0.10);
+    // crown — noticeably wider than the neck, flat roof, cresting teeth, and the turquoise
+    // glass strips visible on the real tower's head
+    const crownW=azw*0.30, crownH=22*u, crownY=horizon-azh-crownH;
+    c.fillStyle='#d6cfc2'; c.fillRect(azx-crownW/2,crownY,crownW,crownH);
+    c.fillStyle='#5fb0ac';
+    for(let i=-3;i<=3;i++) c.fillRect(azx+i*crownW*0.13-1.4*u,crownY+crownH*0.32,2.8*u,crownH*0.55);
     c.fillStyle='#c3bcae';
-    for(let i=-2;i<=2;i++){ c.fillRect(azx+i*azw*0.045-1.5*u,horizon-azh-20*u,3*u,7*u); }
+    for(let i=-3;i<=3;i++) c.fillRect(azx+i*crownW*0.13-1.5*u,crownY-6*u,3*u,7*u);
     // extra solid buildings filling the gap between the two landmarks — denser than the
     // hazy random filler alone, so the skyline reads as a fuller city
     [[.40,90],[ .50,130],[.62,70]].forEach(b=>{
