@@ -521,19 +521,20 @@ function cnPlate(t){
 }
 /* EIFFEL TOWER — wide splayed corner legs, deep concave sweep, two platform shelves */
 function eiffelPlate(t){
-  // Real proportions, not a smooth cone: the splayed legs converge fast, resolving by the
-  // first platform at ~17% height; a gentler taper carries on to the second platform at
-  // ~35%; then a long, dramatically thin mast covers the remaining ~65% up to the antenna.
+  // The first pass matched real-world ratios but at this render size the leg-splay only
+  // lasted 17% of the height and read as a barely-there bump before a thin spike — the tower
+  // was unrecognisable. Exaggerated for legibility instead of literal accuracy: a wider,
+  // longer-lasting splay at the base, a chunkier angular leg silhouette (fewer sides so it
+  // reads as 4 distinct posts rather than a smooth blob), and sharper platform ledges.
   let prof;
-  if(t<0.17){ const k=t/0.17; prof = 0.84 - 0.50*Math.pow(k,1.3); }
-  else if(t<0.35){ const k=(t-0.17)/0.18; prof = 0.34 - 0.16*k; }
-  else { const k=(t-0.35)/0.65; prof = 0.18*Math.pow(1-k,1.6) + 0.028; }
-  // sharp, flat ledges at the two real platforms instead of soft, wide bumps
-  const plat1 = Math.exp(-Math.pow((t-0.17)/0.018,2)) * 0.05;
-  const plat2 = Math.exp(-Math.pow((t-0.35)/0.014,2)) * 0.035;
+  if(t<0.22){ const k=t/0.22; prof = 1.05 - 0.66*Math.pow(k,1.15); }
+  else if(t<0.40){ const k=(t-0.22)/0.18; prof = 0.39 - 0.17*k; }
+  else { const k=(t-0.40)/0.60; prof = 0.22*Math.pow(1-k,1.7) + 0.032; }
+  const plat1 = Math.exp(-Math.pow((t-0.22)/0.020,2)) * 0.06;
+  const plat2 = Math.exp(-Math.pow((t-0.40)/0.016,2)) * 0.04;
   const R = R0*(prof + plat1 + plat2);
-  const legs = 0.55*Math.max(0, 1 - t/0.17);          // splayed legs resolve exactly at platform 1
-  return radial(28, Math.max(R,R0*0.06), 0, -legs, 4);
+  const legs = 0.62*Math.max(0, 1 - t/0.22);          // splayed legs resolve exactly at platform 1
+  return radial(16, Math.max(R,R0*0.055), 0, -legs, 4);
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
@@ -1172,6 +1173,7 @@ function buildScene(key){
     sky.addColorStop(0,'#7db2dd'); sky.addColorStop(.55,'#b9d6e6'); sky.addColorStop(1,'#e8e2d0');
     c.fillStyle=sky; c.fillRect(0,0,W,horizon);
     c.fillStyle='rgba(255,250,225,.9)'; c.beginPath(); c.arc(W*.82,horizon*.14,26,0,7); c.fill();
+    clouds(c,horizon,.55);
     // Alborz mountains, snow-capped — two distinct peaks against a low shared ridge line,
     // not a continuous busy range
     c.fillStyle='#8a94a6';
@@ -1238,6 +1240,24 @@ function buildScene(key){
     c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
     c.fillStyle='rgba(120,130,90,.28)';
     for(let i=0;i<40;i++){ c.fillRect(Math.random()*W,horizon+6+Math.random()*(H-horizon-8),10+Math.random()*20,3); }
+    // Persian cypress trees — tall, slender, flame-shaped, the classic planting around
+    // Tehran's monuments and boulevards rather than generic round-topped trees
+    function cypress(tx,th){
+      c.fillStyle='#3d6b4a';
+      c.beginPath();
+      c.moveTo(tx,horizon-th);
+      c.quadraticCurveTo(tx-th*0.16,horizon-th*0.7, tx-th*0.11,horizon-th*0.35);
+      c.quadraticCurveTo(tx-th*0.14,horizon-th*0.05, tx-th*0.08,horizon);
+      c.lineTo(tx+th*0.08,horizon);
+      c.quadraticCurveTo(tx+th*0.14,horizon-th*0.05, tx+th*0.11,horizon-th*0.35);
+      c.quadraticCurveTo(tx+th*0.16,horizon-th*0.7, tx,horizon-th);
+      c.closePath(); c.fill();
+      c.fillStyle='#345a3f';
+      c.beginPath();
+      c.moveTo(tx,horizon-th*0.62); c.quadraticCurveTo(tx-th*0.10,horizon-th*0.4, tx-th*0.07,horizon-th*0.15);
+      c.lineTo(tx,horizon); c.closePath(); c.fill();
+    }
+    [[.045,86],[.27,72],[.47,94],[.73,78],[.96,88]].forEach(t=>cypress(W*t[0],t[1]*u));
     pole(c,iranFlag,W*.12,horizon+6,40*u,24*u);
     pole(c,iranFlag,W*.34,horizon+6,36*u,22*u);
     pole(c,iranFlag,W*.58,horizon+6,42*u,25*u);
