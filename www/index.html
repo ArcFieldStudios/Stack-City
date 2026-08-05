@@ -618,13 +618,13 @@ const SAVE_KEY='citystack_progress_v1';
 const MAX_HEARTS = 5;
 function loadProgress(){
   try{ const raw=localStorage.getItem(SAVE_KEY); if(raw){ const p=JSON.parse(raw);
-    return { highestUnlocked: p.highestUnlocked|0, unlockedAll: !!p.unlockedAll,
+    return { highestUnlocked: LEVELS.length-1, unlockedAll: true,
       lastLevel: p.lastLevel|0,
       hearts: (p.hearts==null?MAX_HEARTS:Math.max(0,p.hearts|0)),
       lastHeartDay: p.lastHeartDay||'',
       noAds: !!p.noAds }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
+  return { highestUnlocked:LEVELS.length-1, unlockedAll:true, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
