@@ -521,20 +521,21 @@ function cnPlate(t){
 }
 /* EIFFEL TOWER — wide splayed corner legs, deep concave sweep, two platform shelves */
 function eiffelPlate(t){
-  // The first pass matched real-world ratios but at this render size the leg-splay only
-  // lasted 17% of the height and read as a barely-there bump before a thin spike — the tower
-  // was unrecognisable. Exaggerated for legibility instead of literal accuracy: a wider,
-  // longer-lasting splay at the base, a chunkier angular leg silhouette (fewer sides so it
-  // reads as 4 distinct posts rather than a smooth blob), and sharper platform ledges.
+  // Two prior passes tried to fake the tower's 4 open legs with a star-shaped cosine
+  // modulation. That's the wrong tool for this game's constraint: every floor is one
+  // solid filled polygon, so a modulated star doesn't read as "4 legs with gaps between
+  // them" -- it reads as an odd blob or plus-sign once actually stacked. Dropped that
+  // entirely. This is a clean, honestly-tapering square silhouette, the same single-
+  // polygon language every other building in the game already uses: a dramatically wide,
+  // flared base, two sharp platform ledges, then a long, thin mast to the antenna.
   let prof;
-  if(t<0.22){ const k=t/0.22; prof = 1.05 - 0.66*Math.pow(k,1.15); }
-  else if(t<0.40){ const k=(t-0.22)/0.18; prof = 0.39 - 0.17*k; }
-  else { const k=(t-0.40)/0.60; prof = 0.22*Math.pow(1-k,1.7) + 0.032; }
-  const plat1 = Math.exp(-Math.pow((t-0.22)/0.020,2)) * 0.06;
-  const plat2 = Math.exp(-Math.pow((t-0.40)/0.016,2)) * 0.04;
+  if(t<0.22){ const k=t/0.22; prof = 0.95 - 0.58*Math.pow(k,1.1); }
+  else if(t<0.40){ const k=(t-0.22)/0.18; prof = 0.37 - 0.16*k; }
+  else { const k=(t-0.40)/0.60; prof = 0.21*Math.pow(1-k,1.7) + 0.030; }
+  const plat1 = Math.exp(-Math.pow((t-0.22)/0.020,2)) * 0.055;
+  const plat2 = Math.exp(-Math.pow((t-0.40)/0.016,2)) * 0.035;
   const R = R0*(prof + plat1 + plat2);
-  const legs = 0.62*Math.max(0, 1 - t/0.22);          // splayed legs resolve exactly at platform 1
-  return radial(16, Math.max(R,R0*0.055), 0, -legs, 4);
+  return nGon(4, Math.max(R,R0*0.05), Math.PI/4);
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
