@@ -863,7 +863,14 @@ function drawLondon(c,horizon,u,opt){
     c.fillStyle='rgba(255,255,255,.85)';
     for(let i=0;i<80;i++) c.fillRect((i*97%W),(i*61%(horizon*0.7)),1.5,1.5);
     c.fillStyle='rgba(255,250,235,.95)'; c.beginPath(); c.arc(W*.84,horizon*.2,22,0,7); c.fill();
-  } else clouds(c,horizon);
+  } else {
+    const sunX=W*.22, sunY=horizon*.17, sunR=30*u;
+    const glow=c.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*2.6);
+    glow.addColorStop(0,'rgba(255,248,214,.85)'); glow.addColorStop(1,'rgba(255,248,214,0)');
+    c.fillStyle=glow; c.beginPath(); c.arc(sunX,sunY,sunR*2.6,0,7); c.fill();
+    c.fillStyle='#fff8dc'; c.beginPath(); c.arc(sunX,sunY,sunR,0,7); c.fill();
+    clouds(c,horizon);
+  }
   c.fillStyle= night?'rgba(46,60,92,.6)':'rgba(120,140,170,.45)';
   let x=0; while(x<W){ const w=24+Math.random()*46,h=20+Math.random()*70; c.fillRect(x,horizon-h,w,h); x+=w+8+Math.random()*16; }
   const sil= night?'#2c3757':'#5c6b82'; c.fillStyle=sil; c.fillRect(0,horizon,W,H-horizon);
@@ -899,14 +906,14 @@ function drawLondon(c,horizon,u,opt){
   if(opt.shard){
     const shx=W*.60, shh=214*u, shw=42*u;
     const bodyH=shh*0.90;
-    c.fillStyle= night?'#46587a':'#9fb8cf';
+    c.fillStyle= sil;
     c.beginPath(); c.moveTo(shx-shw/2,horizon); c.lineTo(shx-shw*0.025,horizon-bodyH); c.lineTo(shx+shw*0.025,horizon-bodyH); c.lineTo(shx+shw/2,horizon); c.closePath(); c.fill();
-    c.strokeStyle= night?'rgba(150,180,220,.4)':'rgba(255,255,255,.45)'; c.lineWidth=1*u;
+    c.strokeStyle= night?'rgba(150,180,220,.32)':'rgba(255,255,255,.4)'; c.lineWidth=1*u;
     for(let i=1;i<9;i++){ const yy=horizon-bodyH*i/9, hw=shw/2*(1-i/9); c.beginPath(); c.moveTo(shx-hw,yy); c.lineTo(shx+hw,yy); c.stroke(); }
     c.beginPath(); c.moveTo(shx,horizon); c.lineTo(shx,horizon-bodyH); c.stroke();
     // spire — a tight bundle of thin fins that lean inward and actually converge to a point,
     // with an irregular peak, echoing the real building's crown instead of parallel ticks
-    const spBase=horizon-bodyH, spCol= night?'#5c7196':'#b6cbdb';
+    const spBase=horizon-bodyH, spCol= sil;
     const fins=[[-2.6,.52],[-1.1,.86],[0.2,1],[1.4,.70],[2.8,.44]];
     c.strokeStyle=spCol; c.lineCap='round'; c.lineWidth=1.3*u;
     for(const f of fins){
@@ -916,19 +923,24 @@ function drawLondon(c,horizon,u,opt){
     c.lineCap='butt';
   }
 
-  // Tower Bridge
-  const tbx=W*.72,tbw=24*u,tbh=100*u,gap=62*u; c.fillStyle=sil;
+  // Tower Bridge — twin Gothic towers with a stepped pinnacle roof, a high-level walkway
+  // linking them just below the caps, a wider road deck at the base, and straight suspension
+  // cables tying each tower to the deck's outer ends (cleaner read than a single sagging curve)
+  const tbx=W*.72,tbw=24*u,tbh=108*u,gap=64*u; c.fillStyle=sil;
   for(let k=0;k<2;k++){ const bx=k?tbx+gap:tbx;
     c.fillRect(bx,horizon-tbh,tbw,tbh);
-    c.beginPath(); c.moveTo(bx-4*u,horizon-tbh); c.lineTo(bx+tbw/2,horizon-tbh-24*u); c.lineTo(bx+tbw+4*u,horizon-tbh); c.closePath(); c.fill(); }
-  c.fillRect(tbx+tbw,horizon-tbh+16*u,gap-tbw,7*u);
-  c.fillRect(tbx-24*u,horizon-24*u,gap+tbw+48*u,9*u);
-  c.strokeStyle=sil; c.lineWidth=2.6*u;
-  c.beginPath(); c.moveTo(tbx-24*u,horizon-54*u); c.quadraticCurveTo(tbx-12*u,horizon-22*u,tbx,horizon-22*u); c.stroke();
-  c.beginPath(); c.moveTo(tbx+gap+tbw+24*u,horizon-54*u); c.quadraticCurveTo(tbx+gap+tbw+12*u,horizon-22*u,tbx+gap+tbw,horizon-22*u); c.stroke();
+    const capW=tbw*0.72, capX=bx+(tbw-capW)/2;
+    c.fillRect(capX,horizon-tbh-14*u,capW,14*u);
+    c.beginPath(); c.moveTo(capX-3*u,horizon-tbh-14*u); c.lineTo(bx+tbw/2,horizon-tbh-44*u); c.lineTo(capX+capW+3*u,horizon-tbh-14*u); c.closePath(); c.fill(); }
+  c.fillRect(tbx+tbw,horizon-tbh+18*u,gap-tbw,8*u);
+  const deckY=horizon-22*u;
+  c.fillRect(tbx-26*u,deckY,gap+tbw+52*u,8*u);
+  c.strokeStyle=sil; c.lineWidth=2.2*u;
+  c.beginPath(); c.moveTo(tbx-3*u,horizon-tbh+10*u); c.lineTo(tbx-26*u,deckY); c.stroke();
+  c.beginPath(); c.moveTo(tbx+gap+tbw+3*u,horizon-tbh+10*u); c.lineTo(tbx+gap+tbw+26*u,deckY); c.stroke();
 
-  // Gherkin
-  const gx=W*.93,gh=112*u,gw=36*u; c.fillStyle=sil;
+  // Gherkin — sized up a bit and nudged in from the edge to keep clearance at this larger size
+  const gx=W*.90,gh=140*u,gw=44*u; c.fillStyle=sil;
   c.beginPath(); c.moveTo(gx-gw/2,horizon);
   c.bezierCurveTo(gx-gw/2-7*u,horizon-gh*.55,gx-gw*.25,horizon-gh,gx,horizon-gh);
   c.bezierCurveTo(gx+gw*.25,horizon-gh,gx+gw/2+7*u,horizon-gh*.55,gx+gw/2,horizon); c.closePath(); c.fill();
