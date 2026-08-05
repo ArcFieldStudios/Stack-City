@@ -1189,22 +1189,27 @@ function buildScene(key){
       c.fillStyle='rgba(255,240,210,.25)';
       for(let wy2=horizon-h+6;wy2<horizon-6;wy2+=10){ for(let wx=x+4;wx<x+w-4;wx+=9) c.fillRect(wx,wy2,4,5); }
       x+=w+5+Math.random()*10; }
-    // Azadi Tower (iconic arch monument)
-    const azx=W*.20, azw=96*u, azh=150*u;
+    // Azadi Tower — two curved, wide-splayed legs merging near the top into a solid crown
+    // block, with a pointed gothic arch gap between them, matching the real monument's
+    // wishbone silhouette instead of a plain trapezoid arch
+    const azx=W*.20, azw=110*u, azh=165*u;
     c.fillStyle='#e9e4da';
     c.beginPath();
-    c.moveTo(azx-azw/2,horizon);
-    c.lineTo(azx-azw*0.16,horizon-azh);
-    c.quadraticCurveTo(azx,horizon-azh-26*u,azx+azw*0.16,horizon-azh);
-    c.lineTo(azx+azw/2,horizon);
-    c.lineTo(azx+azw*0.30,horizon);
-    // inner arch cut
-    c.lineTo(azx+azw*0.30,horizon-azh*0.5);
-    c.quadraticCurveTo(azx,horizon-azh*0.86,azx-azw*0.30,horizon-azh*0.5);
-    c.lineTo(azx-azw*0.30,horizon);
+    c.moveTo(azx-azw*0.50,horizon);
+    c.quadraticCurveTo(azx-azw*0.46,horizon-azh*0.55, azx-azw*0.08,horizon-azh*0.94);
+    c.lineTo(azx-azw*0.02,horizon-azh*0.90);
+    c.quadraticCurveTo(azx-azw*0.28,horizon-azh*0.50, azx-azw*0.20,horizon);
+    c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(azx+azw*0.50,horizon);
+    c.quadraticCurveTo(azx+azw*0.46,horizon-azh*0.55, azx+azw*0.08,horizon-azh*0.94);
+    c.lineTo(azx+azw*0.02,horizon-azh*0.90);
+    c.quadraticCurveTo(azx+azw*0.28,horizon-azh*0.50, azx+azw*0.20,horizon);
     c.closePath(); c.fill();
     c.fillStyle='#d6cfc2';
-    c.fillRect(azx-azw*0.16,horizon-azh-6*u,azw*0.32,10*u);
+    c.fillRect(azx-azw*0.13,horizon-azh-14*u,azw*0.26,18*u);
+    c.fillStyle='#c3bcae';
+    for(let i=-2;i<=2;i++){ c.fillRect(azx+i*azw*0.045-1.5*u,horizon-azh-20*u,3*u,7*u); }
     // extra solid buildings filling the gap between the two landmarks — denser than the
     // hazy random filler alone, so the skyline reads as a fuller city
     [[.40,90],[ .50,130],[.62,70]].forEach(b=>{
@@ -1213,14 +1218,6 @@ function buildScene(key){
       c.fillStyle='rgba(255,240,210,.28)';
       for(let wy2=horizon-bh+7;wy2<horizon-7;wy2+=11){ for(let wx=bx-bw/2+4;wx<bx+bw/2-4;wx+=9) c.fillRect(wx,wy2,4,5); }
     });
-
-    // Milad silhouette (thin tower + pod + antenna) in the distance
-    const milx=W*.80, milh=210*u;
-    c.fillStyle='#b9b2a6';
-    c.fillRect(milx-5*u,horizon-milh,10*u,milh);
-    c.beginPath(); c.ellipse(milx,horizon-milh*0.86,20*u,13*u,0,0,7); c.fill();
-    c.strokeStyle='#b9b2a6'; c.lineWidth=3*u; c.lineCap='round';
-    c.beginPath(); c.moveTo(milx,horizon-milh); c.lineTo(milx,horizon-milh-46*u); c.stroke(); c.lineCap='butt';
     // ground (normal, not sand)
     const grd=c.createLinearGradient(0,horizon,0,H);
     grd.addColorStop(0,'#c9c1b0'); grd.addColorStop(1,'#a89f8c');
