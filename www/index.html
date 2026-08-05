@@ -216,6 +216,13 @@
   .dot.done { background:#ffe08a; }
   .dot.active { background:#fff; box-shadow:0 0 12px rgba(255,255,255,.9); }
 
+  /* Plain white text + drop-shadow reads fine over dark scenes but washes out against pale
+     daytime skies (Burj Khalifa, CN Tower) or a cloud sitting right behind it — back the
+     intro card with the same translucent dark pill already used by #levelTag/#tutorHint. */
+  .intro-card { background:rgba(14,22,40,.5); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.14); border-radius:20px;
+    padding:22px 28px; display:flex; flex-direction:column; align-items:center; }
+
   #resultScreen { background:rgba(8,16,32,.62); backdrop-filter:blur(7px); }
   .compare { display:flex; gap:min(9vw,64px); align-items:flex-end; margin-top:14px; }
   .compare figure { text-align:center; }
@@ -344,10 +351,12 @@
 </div>
 
 <div class="screen" id="introScreen">
-  <div class="eyebrow" id="introEyebrow">LEVEL 1</div>
-  <div class="title" id="introTitle">THE SHARD</div>
-  <div class="subtitle" id="introSub">LONDON &middot; 40 FLOORS &middot; 309.6 M</div>
-  <div class="dots" id="introDots"></div>
+  <div class="intro-card">
+    <div class="eyebrow" id="introEyebrow">LEVEL 1</div>
+    <div class="title" id="introTitle">THE SHARD</div>
+    <div class="subtitle" id="introSub">LONDON &middot; 40 FLOORS &middot; 309.6 M</div>
+    <div class="dots" id="introDots"></div>
+  </div>
   <div class="tap-hint">TAP TO BUILD</div>
 </div>
 
@@ -1973,7 +1982,13 @@ function buildLevelList(){
 const FREE_UI={
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
   speed:['Slow','Medium','Fast','Random'],
-  bg:['Day','Dusk','Night','Snow'],
+  // Plain [label,key] pairs for the generic skies; the real city scenes reuse the exact
+  // same cached canvases the levels themselves draw from (see `scenes` / buildAllScenes),
+  // keyed to match those scene names so frame() can pick them straight out of that cache.
+  bg:[['Day','day'],['Dusk','dusk'],['Night','night'],['Snow','snow'],
+      ['London Day','londonday'],['London Night','londonnight'],['Dubai','dubai'],
+      ['New York','nycplain'],['New York · WTC','nycwtc'],['Tehran','tehran'],
+      ['Toronto','toronto'],['Paris','paris'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
 };
 function buildFreeOpts(){
@@ -1984,11 +1999,11 @@ function buildFreeOpts(){
     lab.textContent = group==='bg'?'BACKGROUND':group.toUpperCase();
     wrap.appendChild(lab);
     const row=document.createElement('div'); row.className='optrow';
-    FREE_UI[group].forEach(opt=>{
-      const key=opt.toLowerCase();
+    FREE_UI[group].forEach(entry=>{
+      const [label,key] = Array.isArray(entry) ? entry : [entry, entry.toLowerCase()];
       const chip=document.createElement('button'); chip.className='chip';
       if(key==='rainbow') chip.className+=' rainbow';
-      chip.textContent=opt;
+      chip.textContent=label;
       if(freeConfig[group]===key) chip.classList.add('sel');
       chip.onclick=e=>{ e.stopPropagation(); sndClick(); freeConfig[group]=key;
         [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel'); };
@@ -2124,11 +2139,7 @@ function tap(e){
     else if(curLevel>=LEVELS.length-1){ unlockLevel(curLevel); state='complete';
       S('completeStats').innerHTML='TOTAL PERFECT PLACEMENTS&nbsp;<b>'+totalPerfects+'</b>';
       transitioning=true; setTimeout(()=>{ transitioning=false; S('completeScreen').classList.add('visible'); },520);
-    } else if(autoTutorial && curLevel===0){
-      unlockLevel(1); autoTutorial=false; state='menu'; curLevel=0; hideHUD();
-      transitioning=true;
-      setTimeout(()=>{ transitioning=false; renderDots('menuDots',-1); S('menuScreen').classList.add('visible'); },520);
-    } else { unlockLevel(curLevel+1); curLevel++; transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
+    } else { autoTutorial=false; unlockLevel(curLevel+1); curLevel++; transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
   }
   else if(state==='complete'){ S('completeScreen').classList.remove('visible');
     transitioning=true; setTimeout(()=>{ transitioning=false; showMenu(); },520); }
@@ -2213,7 +2224,7 @@ function frame(now){
   }
 
   ctx.clearRect(0,0,W,H);
-  if(isFree){ drawFreeBg(); }
+  if(isFree){ const citySc=scenes[freeConfig.bg]; if(citySc) ctx.drawImage(citySc,0,0,W*DPR,H*DPR,0,0,W,H); else drawFreeBg(); }
   else { const scene=scenes[L().bg]; if(scene) ctx.drawImage(scene,0,0,W*DPR,H*DPR,0,0,W,H); }
   const fade=Math.min(camY/3000,.22);
   if(fade>0){ ctx.fillStyle='rgba(255,255,255,'+fade+')'; ctx.fillRect(0,0,W,H); }
