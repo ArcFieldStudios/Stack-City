@@ -1515,7 +1515,7 @@ function drawPrismLite(c,poly,y,h,colIdx){
 
 /* ==================== CROWNS / SPIRE ==================== */
 function anchorOf(b){ const ct=polyCentroid(b.poly); return proj(ct[0], b.y+b.h, ct[1]); }
-const CROWN_H={ shard:96, needle:180, antenna:150, mast:150, eiffel:126, gothic:108, deco:140, domecap:50, pinnacle:140, none:0 };
+const CROWN_H={ shard:96, needle:180, antenna:150, mast:150, eiffel:126, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
 function crownHeight(){ return CROWN_H[L().crown] || 120; }
 function drawCrown(c,p,t,k,ghost,tiny){
   const crown=L().crown; if(crown==='none') return;
@@ -1576,21 +1576,27 @@ function drawCrown(c,p,t,k,ghost,tiny){
     post(U*0.03,U*0.010,Y-H*0.50,Y-H*0.92);
     cap(U*0.012,H*0.045,Y-H);
   }
-  else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage with corner
-                                           // pinnacles, a taller louvred belfry with its own small
-                                           // pinnacles, and a proper tall, slender iron spire —
-                                           // matching real photos instead of a stubby cone
-    const bw=U*0.28, bh=U*0.62, bTop=Y-bh;
-    c.fillStyle=fill; c.fillRect(X-bw,bTop,bw*2,bh);              // flat two-tone square block, same
-    c.fillStyle=dark; c.fillRect(X,bTop,bw,bh);                   // language as every other crown
-    // corner pinnacles flanking the clock stage — small pointed turrets, the detail that most
-    // immediately reads as "Big Ben" rather than a generic square tower
-    const pinW=bw*0.34, pinH=bh*0.22;
-    [-1,1].forEach(side=>{ const px=X+side*bw*0.86;
-      c.fillStyle=fill; c.fillRect(px-pinW/2,bTop-pinH*0.55,pinW,pinH*0.55);
-      c.beginPath(); c.moveTo(px-pinW*0.6,bTop-pinH*0.55); c.lineTo(px,bTop-pinH); c.lineTo(px+pinW*0.6,bTop-pinH*0.55); c.closePath(); c.fill();
-    });
-    const cy=bTop+bh*0.46, cr=bw*0.62;
+  else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage on gothic-arch
+                                           // louvres with corner pinnacles, a gilded collar, a
+                                           // louvred belfry with its own pinnacles, a lantern collar,
+                                           // then a tall, steeply pointed spire with gilded ridge
+                                           // lines and a ball-and-cross finial — proportioned against
+                                           // real photos instead of the old single stubby cone
+    const archAt=(ax,ay,aw,ah,col)=>{ c.fillStyle=col;
+      c.beginPath(); c.moveTo(ax-aw/2,ay); c.lineTo(ax-aw/2,ay-ah*0.55); c.lineTo(ax,ay-ah); c.lineTo(ax+aw/2,ay-ah*0.55); c.lineTo(ax+aw/2,ay); c.closePath(); c.fill(); };
+    const pinnacleAt=(px,py,pw,ph)=>{ c.fillStyle=fill; c.fillRect(px-pw/2,py-ph*0.6,pw,ph*0.6);
+      c.beginPath(); c.moveTo(px-pw*0.6,py-ph*0.6); c.lineTo(px,py-ph); c.lineTo(px+pw*0.6,py-ph*0.6); c.closePath(); c.fill();
+      c.fillStyle= ghost?fill:'#e2c15e'; c.beginPath(); c.arc(px,py-ph-U*0.006,U*0.009,0,7); c.fill(); };
+    const gold= ghost?fill:'#e2c15e', darkCol= ghost?'rgba(20,40,55,.55)':'rgba(0,0,0,.32)';
+
+    // clock stage, sitting on a pair of gothic-arch louvre openings
+    const bw=U*0.28, bh=U*0.56, bTop=Y-bh;
+    c.fillStyle=fill; c.fillRect(X-bw,bTop,bw*2,bh);
+    c.fillStyle=dark; c.fillRect(X,bTop,bw,bh);
+    if(!tiny){ archAt(X-bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); archAt(X+bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); }
+    [-1,1].forEach(side=>pinnacleAt(X+side*bw*0.90,bTop,bw*0.30,bh*0.30));
+
+    const cy=bTop+bh*0.42, cr=bw*0.62;
     if(tiny){
       c.fillStyle= ghost?'rgba(230,248,255,.85)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
       c.strokeStyle= ghost?'rgba(120,205,235,.9)':'#8a7d4a'; c.lineWidth=Math.max(cr*0.11,0.6);
@@ -1605,27 +1611,40 @@ function drawCrown(c,p,t,k,ghost,tiny){
       c.rotate(2.05); c.fillRect(-cr*0.06,-cr*0.4,cr*0.12,cr*0.42);
       c.restore();
     }
-    // belfry — taller than before, with faint louvre slits (the actual bell housing on the
-    // real tower), topped with its own small corner pinnacles at the base of the spire
-    const belH=H*0.20, bbw=U*0.205, belTop=bTop-belH;
+
+    // gilded cresting collar separating the clock stage from the belfry
+    const collar1H=H*0.025;
+    c.fillStyle=gold; c.fillRect(X-bw*1.02,bTop-collar1H,bw*2.04,collar1H);
+
+    // belfry — the louvred bell stage, narrower than the clock stage, with its own pinnacles
+    const belH=H*0.22, bbw=U*0.205, belTop=bTop-collar1H-belH;
     c.fillStyle=fill; c.fillRect(X-bbw,belTop,bbw*2,belH);
     c.fillStyle=dark; c.fillRect(X,belTop,bbw,belH);
-    if(!tiny){
-      c.strokeStyle= ghost?'rgba(230,248,255,.45)':'rgba(0,0,0,.26)'; c.lineWidth=Math.max(bbw*0.05,0.6);
-      [-0.55,0,0.55].forEach(lx=>{ c.beginPath(); c.moveTo(X+lx*bbw,belTop+belH*0.18); c.lineTo(X+lx*bbw,belTop+belH*0.86); c.stroke(); });
-    }
-    const pin2W=bbw*0.42, pin2H=belH*0.34;
-    [-1,1].forEach(side=>{ const px=X+side*bbw*0.82;
-      c.fillStyle=fill; c.beginPath(); c.moveTo(px-pin2W/2,belTop); c.lineTo(px,belTop-pin2H); c.lineTo(px+pin2W/2,belTop); c.closePath(); c.fill();
-    });
-    // tall, slender iron spire tapering to a thin mast — proportioned like the real spire,
-    // not the previous stubby pyramid
-    const spH=H*0.34, spBaseW=bbw*0.80;
-    c.fillStyle=fill; c.beginPath(); c.moveTo(X-spBaseW,belTop); c.lineTo(X-spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW,belTop); c.closePath(); c.fill();
-    c.fillStyle=dark; c.beginPath(); c.moveTo(X,belTop); c.lineTo(X,belTop-spH*0.78); c.lineTo(X+spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW,belTop); c.closePath(); c.fill();
-    post(U*0.011,U*0.006,belTop-spH*0.76,belTop-spH);
-    cap(U*0.009,H*0.03,belTop-spH);
-    c.fillStyle= ghost?fill:'#e2c15e'; c.beginPath(); c.arc(X,belTop-spH-U*0.012,U*0.018,0,7); c.fill();
+    if(!tiny){ archAt(X-bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); archAt(X+bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); }
+    const pin2H=belH*0.40;
+    [-1,1].forEach(side=>pinnacleAt(X+side*bbw*0.86,belTop,bbw*0.40,pin2H));
+
+    // lantern collar — a thin balustrade ledge where the roof structure begins
+    const collar2H=H*0.02, spireBase=belTop-pin2H*0.15-collar2H;
+    c.fillStyle=gold; c.fillRect(X-bbw*1.15,spireBase,bbw*2.30,collar2H);
+
+    // tall, steeply pointed spire tapering to a thin mast, with gilded ridge lines along its
+    // visible edges — proportioned like the real ironwork spire, not a stubby pyramid
+    const spH=H*0.46, spBaseW=bbw*0.92;
+    c.fillStyle=fill; c.beginPath(); c.moveTo(X-spBaseW,spireBase); c.lineTo(X-spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW,spireBase); c.closePath(); c.fill();
+    c.fillStyle=dark; c.beginPath(); c.moveTo(X,spireBase); c.lineTo(X,spireBase-spH*0.82); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW,spireBase); c.closePath(); c.fill();
+    c.strokeStyle=gold; c.lineWidth=Math.max(U*0.006,0.6);
+    c.beginPath(); c.moveTo(X-spBaseW,spireBase); c.lineTo(X-spBaseW*0.05,spireBase-spH*0.82); c.stroke();
+    c.beginPath(); c.moveTo(X+spBaseW,spireBase); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.stroke();
+    post(U*0.010,U*0.006,spireBase-spH*0.80,spireBase-spH);
+    cap(U*0.008,H*0.025,spireBase-spH);
+
+    // finial — a gilded ball with a thin cross above it
+    const finY=spireBase-spH-U*0.010;
+    c.fillStyle=gold; c.beginPath(); c.arc(X,finY,U*0.016,0,7); c.fill();
+    c.strokeStyle=gold; c.lineWidth=Math.max(U*0.007,0.7);
+    c.beginPath(); c.moveTo(X,finY-U*0.016); c.lineTo(X,finY-U*0.055); c.stroke();
+    c.beginPath(); c.moveTo(X-U*0.014,finY-U*0.040); c.lineTo(X+U*0.014,finY-U*0.040); c.stroke();
   }
   else if(crown==='deco'){                // Empire State — solid stepped setbacks + mast + cap block
     let yy=Y; const tiers=[[0.20,0.16],[0.14,0.14],[0.085,0.14]];
