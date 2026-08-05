@@ -216,13 +216,6 @@
   .dot.done { background:#ffe08a; }
   .dot.active { background:#fff; box-shadow:0 0 12px rgba(255,255,255,.9); }
 
-  /* Plain white text + drop-shadow reads fine over dark scenes but washes out against pale
-     daytime skies (Burj Khalifa, CN Tower) or a cloud sitting right behind it — back the
-     intro card with the same translucent dark pill already used by #levelTag/#tutorHint. */
-  .intro-card { background:rgba(14,22,40,.5); backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.14); border-radius:20px;
-    padding:22px 28px; display:flex; flex-direction:column; align-items:center; }
-
   #resultScreen { background:rgba(8,16,32,.62); backdrop-filter:blur(7px); }
   .compare { display:flex; gap:min(9vw,64px); align-items:flex-end; margin-top:14px; }
   .compare figure { text-align:center; }
@@ -351,12 +344,10 @@
 </div>
 
 <div class="screen" id="introScreen">
-  <div class="intro-card">
-    <div class="eyebrow" id="introEyebrow">LEVEL 1</div>
-    <div class="title" id="introTitle">THE SHARD</div>
-    <div class="subtitle" id="introSub">LONDON &middot; 40 FLOORS &middot; 309.6 M</div>
-    <div class="dots" id="introDots"></div>
-  </div>
+  <div class="eyebrow" id="introEyebrow">LEVEL 1</div>
+  <div class="title" id="introTitle">THE SHARD</div>
+  <div class="subtitle" id="introSub">LONDON &middot; 40 FLOORS &middot; 309.6 M</div>
+  <div class="dots" id="introDots"></div>
   <div class="tap-hint">TAP TO BUILD</div>
 </div>
 
