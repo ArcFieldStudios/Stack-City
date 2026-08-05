@@ -49,9 +49,6 @@
   .lvl-btn.locked .n { color:rgba(255,255,255,.55); }
   .lvl-btn.locked small { color:rgba(255,255,255,.4); }
   .lvl-btn .lock { font-size:14px; margin-right:6px; opacity:.85; }
-  .lvl-btn.unlock-all { background:linear-gradient(90deg,rgba(255,180,80,.32),rgba(255,120,180,.28));
-    border-color:rgba(255,200,120,.6); }
-  .lvl-btn.unlock-all .n { color:#ffd479; }
   .res-btn-hint, .res-menu-btn { display:inline-block; padding:11px 26px; font-size:11px;
     letter-spacing:3px; font-weight:600; color:#fff; background:rgba(255,255,255,.1);
     border:1px solid rgba(255,255,255,.32); border-radius:999px; min-width:200px; text-align:center;
@@ -267,9 +264,6 @@
     <span class="heart-big">♥</span>
     <h1>GET HEARTS</h1>
     <button class="shop-btn ad" data-heart="ad"><span>WATCH AD</span><span class="price">+1 ♥</span></button>
-    <button class="shop-btn" data-heart="5"><span>5 HEARTS</span><span class="price">$0.99</span></button>
-    <button class="shop-btn" data-heart="15"><span>15 HEARTS</span><span class="price">$1.99</span></button>
-    <button class="shop-btn" data-heart="40"><span>40 HEARTS</span><span class="price">$4.99</span></button>
     <button id="shopClose">CANCEL</button>
   </div>
 </div>
@@ -618,19 +612,19 @@ const SAVE_KEY='citystack_progress_v1';
 const MAX_HEARTS = 5;
 function loadProgress(){
   try{ const raw=localStorage.getItem(SAVE_KEY); if(raw){ const p=JSON.parse(raw);
-    return { highestUnlocked: LEVELS.length-1, unlockedAll: true,
+    return { highestUnlocked: Math.max(0, Math.min(LEVELS.length-1, p.highestUnlocked|0)),
+      unlockedAll: !!p.unlockedAll,
       lastLevel: p.lastLevel|0,
       hearts: (p.hearts==null?MAX_HEARTS:Math.max(0,p.hearts|0)),
       lastHeartDay: p.lastHeartDay||'',
       noAds: !!p.noAds }; }
   }catch(e){}
-  return { highestUnlocked:LEVELS.length-1, unlockedAll:true, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
 function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
 function unlockLevel(i){ if(i>progress.highestUnlocked){ progress.highestUnlocked=i; saveProgress(); } }
-function unlockAllLevels(){ progress.unlockedAll=true; saveProgress(); }
 function setLastLevel(i){ if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); } }
 function updateHeartUI(){ const el=S('heartCount'); if(el) el.textContent=progress.hearts; }
 function showHearts(){ updateHeartUI(); S('heartBadge').classList.add('show'); }
@@ -1865,16 +1859,6 @@ function buildLevelList(){
     }
     el.appendChild(b);
   });
-  if(!progress.unlockedAll){
-    const u=document.createElement('button'); u.className='btn lvl-btn unlock-all';
-    u.innerHTML='<span>UNLOCK ALL LEVELS<small>SKIP THE GRIND \u00b7 PLAY ANY CITY</small></span><span class="n">\u2605</span>';
-    u.onclick=e=>{ e.stopPropagation(); sndClick();
-      if(confirm('Unlock all levels?\n\n(In the published app this will be a paid purchase via Google Play. For now it unlocks for free while testing.)')){
-        unlockAllLevels(); buildLevelList();
-      }
-    };
-    el.appendChild(u);
-  }
 }
 const FREE_UI={
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
@@ -1918,8 +1902,7 @@ S('btnGetHearts').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
 S('shopClose').onclick=e=>{ e.stopPropagation(); sndClick(); closeShop(); };
 document.querySelectorAll('.shop-btn').forEach(btn=>{
   btn.onclick=e=>{ e.stopPropagation(); sndClick();
-    const kind=btn.getAttribute('data-heart');
-    if(kind==='ad'){ closeShop(); playAdForHeart(()=>{
+    closeShop(); playAdForHeart(()=>{
       // refresh result-screen buttons if still on that screen
       if(state==='result'){
         const failedMid = stack.length>0 && stack.length<=N && S('resHint').textContent==='TAP TO RETRY';
@@ -1927,19 +1910,7 @@ document.querySelectorAll('.shop-btn').forEach(btn=>{
         S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
         S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
       }
-    }); return; }
-    // Buy tiers — placeholder for Google Play Billing; awards hearts locally for now.
-    const n=parseInt(kind,10);
-    if(confirm('This will be a real Play Store purchase once published.\n\nUnlock '+n+' hearts for free while testing?')){
-      progress.hearts=Math.min(999, progress.hearts+n); saveProgress(); updateHeartUI();
-      toast('+'+n+' HEARTS ♥'); closeShop();
-      if(state==='result'){
-        const failedMid = stack.length>0 && stack.length<=N && S('resHint').textContent==='TAP TO RETRY';
-        S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
-        S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
-        S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
-      }
-    }
+    });
   };
 });
 S('btnWatchAd').onclick=e=>{ e.stopPropagation(); sndClick();
