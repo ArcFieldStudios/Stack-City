@@ -521,11 +521,19 @@ function cnPlate(t){
 }
 /* EIFFEL TOWER — wide splayed corner legs, deep concave sweep, two platform shelves */
 function eiffelPlate(t){
-  const prof  = 0.74*Math.pow(1-t,1.75) + 0.10;
-  const shelf = 0.06*Math.exp(-Math.pow((t-0.30)/0.035,2)) + 0.045*Math.exp(-Math.pow((t-0.58)/0.03,2));
-  const R = R0*(prof + shelf);
-  const legs = 0.55*Math.max(0, 1 - t*3.0);          // strong corner legs, gone by t~0.33
-  return radial(28, Math.max(R,R0*0.085), 0, -legs, 4);
+  // Real proportions, not a smooth cone: the splayed legs converge fast, resolving by the
+  // first platform at ~17% height; a gentler taper carries on to the second platform at
+  // ~35%; then a long, dramatically thin mast covers the remaining ~65% up to the antenna.
+  let prof;
+  if(t<0.17){ const k=t/0.17; prof = 0.84 - 0.50*Math.pow(k,1.3); }
+  else if(t<0.35){ const k=(t-0.17)/0.18; prof = 0.34 - 0.16*k; }
+  else { const k=(t-0.35)/0.65; prof = 0.18*Math.pow(1-k,1.6) + 0.028; }
+  // sharp, flat ledges at the two real platforms instead of soft, wide bumps
+  const plat1 = Math.exp(-Math.pow((t-0.17)/0.018,2)) * 0.05;
+  const plat2 = Math.exp(-Math.pow((t-0.35)/0.014,2)) * 0.035;
+  const R = R0*(prof + plat1 + plat2);
+  const legs = 0.55*Math.max(0, 1 - t/0.17);          // splayed legs resolve exactly at platform 1
+  return radial(28, Math.max(R,R0*0.06), 0, -legs, 4);
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
@@ -1162,10 +1170,11 @@ function buildScene(key){
     const sky=c.createLinearGradient(0,0,0,horizon);
     sky.addColorStop(0,'#7db2dd'); sky.addColorStop(.55,'#b9d6e6'); sky.addColorStop(1,'#e8e2d0');
     c.fillStyle=sky; c.fillRect(0,0,W,horizon);
-    // Alborz mountains, snow-capped
+    // Alborz mountains, snow-capped — two distinct peaks against a low shared ridge line,
+    // not a continuous busy range
     c.fillStyle='#8a94a6';
     c.beginPath(); c.moveTo(0,horizon);
-    const peaks=[[0,.55],[.14,.30],[.28,.5],[.44,.22],[.6,.46],[.76,.26],[.9,.5],[1,.36]];
+    const peaks=[[0,.14],[.22,.56],[.38,.16],[.52,.14],[.72,.50],[.88,.15],[1,.12]];
     peaks.forEach((p,i)=>{ const px=p[0]*W, py=horizon-p[1]*H*0.4; i?c.lineTo(px,py):c.lineTo(px,py); });
     c.lineTo(W,horizon); c.closePath(); c.fill();
     c.fillStyle='rgba(255,255,255,.85)';
@@ -1196,6 +1205,15 @@ function buildScene(key){
     c.closePath(); c.fill();
     c.fillStyle='#d6cfc2';
     c.fillRect(azx-azw*0.16,horizon-azh-6*u,azw*0.32,10*u);
+    // extra solid buildings filling the gap between the two landmarks — denser than the
+    // hazy random filler alone, so the skyline reads as a fuller city
+    [[.40,90],[ .50,130],[.62,70]].forEach(b=>{
+      const bx=W*b[0], bw=34*u, bh=b[1]*u; const col=Math.random()<.5?sil:silD;
+      c.fillStyle=col; c.fillRect(bx-bw/2,horizon-bh,bw,bh);
+      c.fillStyle='rgba(255,240,210,.28)';
+      for(let wy2=horizon-bh+7;wy2<horizon-7;wy2+=11){ for(let wx=bx-bw/2+4;wx<bx+bw/2-4;wx+=9) c.fillRect(wx,wy2,4,5); }
+    });
+
     // Milad silhouette (thin tower + pod + antenna) in the distance
     const milx=W*.80, milh=210*u;
     c.fillStyle='#b9b2a6';
@@ -1572,13 +1590,13 @@ function drawCrown(c,p,t,k,ghost,tiny){
     c.fillStyle=fill; [0.42,0.64,0.84].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*(0.05-f*0.025),U*0.017,0,0,7); c.fill(); });
     cap(U*0.011,H*0.045,Y-H);
   }
-  else if(crown==='eiffel'){              // Eiffel — campanile block + cupola + solid mast + cap block
-    c.fillStyle=fill; c.fillRect(X-U*0.17,Y-H*0.34,U*0.34,H*0.34);
-    c.fillStyle=dark; c.fillRect(X+U*0.02,Y-H*0.34,U*0.15,H*0.34);
-    c.fillStyle=fill; c.beginPath(); c.moveTo(X-U*0.17,Y-H*0.34); c.lineTo(X,Y-H*0.52); c.lineTo(X+U*0.17,Y-H*0.34); c.closePath(); c.fill();
-    c.fillStyle=dark; c.beginPath(); c.moveTo(X,Y-H*0.52); c.lineTo(X+U*0.17,Y-H*0.34); c.lineTo(X,Y-H*0.34); c.closePath(); c.fill();
-    post(U*0.03,U*0.010,Y-H*0.50,Y-H*0.92);
-    cap(U*0.012,H*0.045,Y-H);
+  else if(crown==='eiffel'){              // Eiffel — the lattice mast simply continues tapering
+                                           // up to a fine antenna tip; not a separate
+                                           // campanile-and-cupola block sitting on top of it
+    post(U*0.05,U*0.020,Y,Y-H*0.45);
+    post(U*0.020,U*0.008,Y-H*0.44,Y-H*0.80);
+    cap(U*0.010,H*0.03,Y-H*0.80);
+    post(U*0.006,U*0.0015,Y-H*0.77,Y-H);
   }
   else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage on gothic-arch
                                            // louvres with corner pinnacles, a gilded collar, a
@@ -1658,14 +1676,21 @@ function drawCrown(c,p,t,k,ghost,tiny){
     c.beginPath(); c.moveTo(X,finY-U*0.016); c.lineTo(X,finY-U*0.055); c.stroke();
     c.beginPath(); c.moveTo(X-U*0.014,finY-U*0.040); c.lineTo(X+U*0.014,finY-U*0.040); c.stroke();
   }
-  else if(crown==='deco'){                // Empire State — solid stepped setbacks + mast + cap block
+  else if(crown==='deco'){                // Empire State — solid stepped Art Deco setbacks,
+                                           // topped by the building's own distinct mooring-mast
+                                           // spire (a shaped, tapering tower of its own) instead
+                                           // of just a bare thin post
     let yy=Y; const tiers=[[0.20,0.16],[0.14,0.14],[0.085,0.14]];
     for(const tr of tiers){
       c.fillStyle=fill; c.fillRect(X-U*tr[0],yy-H*tr[1],U*tr[0]*2,H*tr[1]);
       c.fillStyle=dark; c.fillRect(X+U*tr[0]*0.25,yy-H*tr[1],U*tr[0]*0.75,H*tr[1]);
       yy-=H*tr[1]; }
-    post(U*0.05,U*0.011,yy,Y-H*0.94);
-    cap(U*0.010,H*0.035,Y-H);
+    const mastBase=yy;
+    c.fillStyle=fill; c.beginPath(); c.moveTo(X-U*0.055,mastBase); c.lineTo(X-U*0.030,mastBase-H*0.20); c.lineTo(X+U*0.030,mastBase-H*0.20); c.lineTo(X+U*0.055,mastBase); c.closePath(); c.fill();
+    c.fillStyle=dark; c.beginPath(); c.moveTo(X,mastBase); c.lineTo(X,mastBase-H*0.20); c.lineTo(X+U*0.030,mastBase-H*0.20); c.lineTo(X+U*0.055,mastBase); c.closePath(); c.fill();
+    post(U*0.028,U*0.012,mastBase-H*0.19,mastBase-H*0.30);
+    cap(U*0.016,H*0.02,mastBase-H*0.30);
+    post(U*0.006,U*0.002,mastBase-H*0.30,Y-H);
   }
   else if(crown==='domecap'){             // Shanghai — solid rounded cap
     c.fillStyle=fill; c.beginPath();
