@@ -2020,6 +2020,7 @@ function startPlaying(){ S('introScreen').classList.remove('visible'); state='pl
 /* ==================== INPUT ==================== */
 let lockTap=0, transitioning=false;
 function tap(e){
+  if(S('ageGateScreen').classList.contains('show')) return;
   if(e&&e.target&&e.target.closest&&e.target.closest('.no-tap')) return;
   if(paused||transitioning) return;
   // Menu / intro / result / complete screens only react to taps in the bottom half of the
