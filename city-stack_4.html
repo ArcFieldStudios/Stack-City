@@ -189,6 +189,18 @@
   #splashSub { font-size:10px; letter-spacing:8px; opacity:.45; margin-top:28px; text-transform:uppercase; }
   @keyframes splashFade { 0%{opacity:0;} 18%{opacity:1;} 78%{opacity:1;} 100%{opacity:0;} }
   @keyframes splashScale { 0%{transform:scale(.96);} 30%{transform:scale(1);} 100%{transform:scale(1.04);} }
+
+  #ageGateScreen { position:fixed; inset:0; z-index:1900; display:none; align-items:center; justify-content:center;
+    flex-direction:column; text-align:center; padding:0 28px; color:#fff;
+    background:radial-gradient(ellipse at center,#1c2c4a 0%,#080f1e 100%); }
+  #ageGateScreen.show { display:flex; }
+  #ageGateScreen h1 { font-size:min(7vw,26px); font-weight:300; letter-spacing:5px; margin-bottom:12px; }
+  #ageGateScreen p { font-size:11px; letter-spacing:1.5px; line-height:1.6; opacity:.55; margin-bottom:30px; max-width:280px; }
+  .age-btn { pointer-events:auto; display:block; width:100%; max-width:260px; padding:14px 20px; margin-top:12px;
+    font-size:13px; letter-spacing:3px; font-weight:600; color:#fff; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.26); border-radius:14px; cursor:pointer; font-family:inherit;
+    text-shadow:0 1px 6px rgba(0,0,0,.3); }
+  .age-btn:hover { background:rgba(255,255,255,.15); }
   .eyebrow { font-size:12px; letter-spacing:7px; color:rgba(255,255,255,.9); margin-bottom:10px; font-weight:600;
     text-shadow:0 2px 10px rgba(0,0,0,.45); }
   .title { font-size:min(9vw,44px); font-weight:200; letter-spacing:6px; color:#fff;
@@ -313,6 +325,14 @@
     <div id="splashName">ARC <span class="accent">FIELD</span><br><span class="studios">STUDIOS</span></div>
     <div id="splashSub">Presents</div>
   </div>
+</div>
+
+<div id="ageGateScreen" class="no-tap">
+  <h1>BEFORE WE START</h1>
+  <p>This helps us show you the right experience and follow app store guidelines.</p>
+  <button class="age-btn" data-age="under13">UNDER 13</button>
+  <button class="age-btn" data-age="13to17">13 – 17</button>
+  <button class="age-btn" data-age="18plus">18 OR OLDER</button>
 </div>
 
 <div class="screen" id="menuScreen">
@@ -617,15 +637,23 @@ function loadProgress(){
       lastLevel: p.lastLevel|0,
       hearts: (p.hearts==null?MAX_HEARTS:Math.max(0,p.hearts|0)),
       lastHeartDay: p.lastHeartDay||'',
-      noAds: !!p.noAds }; }
+      noAds: !!p.noAds,
+      ageBand: p.ageBand||'' }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'' };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
 function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
 function unlockLevel(i){ if(i>progress.highestUnlocked){ progress.highestUnlocked=i; saveProgress(); } }
 function setLastLevel(i){ if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); } }
+/* Age-gate: minimal age-band self-declaration, no birthdate collected. Downstream
+   integrations (PostHog, AdMob) read isUnder13()/isMinor() to decide how much they
+   can track or personalize — under-13 must run in a restricted/child-directed mode. */
+function isUnder13(){ return progress.ageBand==='under13'; }
+function isMinor(){ return progress.ageBand==='under13' || progress.ageBand==='13to17'; }
+function needsAgeGate(){ return !progress.ageBand; }
+function setAgeBand(band){ progress.ageBand=band; saveProgress(); }
 function updateHeartUI(){ const el=S('heartCount'); if(el) el.textContent=progress.hearts; }
 function showHearts(){ updateHeartUI(); S('heartBadge').classList.add('show'); }
 function hideHearts(){ S('heartBadge').classList.remove('show'); }
@@ -2132,9 +2160,7 @@ let autoTutorial=false;
 resize(); reset(); state='menu'; renderDots('menuDots',-1);
 requestAnimationFrame(frame);
 
-// Splash fades over 3.4s; on completion, route based on tutorial progress.
-setTimeout(()=>{
-  const splash=S('splashScreen'); if(splash) splash.style.display='none';
+function proceedPastGate(){
   checkDailyHeart();
   const tutorialDone = progress.highestUnlocked>=1 || progress.unlockedAll;
   if(tutorialDone){
@@ -2143,6 +2169,21 @@ setTimeout(()=>{
     autoTutorial=true; isFree=false; curLevel=0; totalPerfects=0;
     S('menuBtn').classList.add('show'); showIntro();
   }
+}
+document.querySelectorAll('.age-btn').forEach(btn=>{
+  btn.onclick=e=>{ e.stopPropagation(); sndClick();
+    setAgeBand(btn.getAttribute('data-age'));
+    S('ageGateScreen').classList.remove('show');
+    proceedPastGate();
+  };
+});
+
+// Splash fades over 3.4s; on completion, show the age gate on first-ever launch,
+// otherwise route straight based on tutorial progress.
+setTimeout(()=>{
+  const splash=S('splashScreen'); if(splash) splash.style.display='none';
+  if(needsAgeGate()){ S('ageGateScreen').classList.add('show'); return; }
+  proceedPastGate();
 }, 3400);
 
 })();
