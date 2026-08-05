@@ -529,8 +529,8 @@ function eiffelPlate(t){
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
-  let R = R0*(0.42 - 0.035*t);
-  R += R0*0.06*Math.exp(-Math.pow((t-0.86)/0.05,2));  // belfry stage
+  let R = R0*(0.60 - 0.05*t);
+  R += R0*0.085*Math.exp(-Math.pow((t-0.86)/0.05,2));  // belfry stage
   return nGon(4, R, Math.PI/4);
 }
 /* EMPIRE STATE BUILDING — Art Deco square: wide base, setbacks, tall shaft, crown */
@@ -902,25 +902,44 @@ function drawLondon(c,horizon,u,opt){
   c.fillRect(spx-4*u,horizon-82*u,8*u,16*u);
   c.beginPath(); c.arc(spx,horizon-sph-12*u,5*u,0,7); c.fill();
 
-  // The Shard (only when requested) — tapered glass body with an actual converging spire on top
+  // Walkie-Talkie — narrower base, bulging out toward the top, flat crown. Sized up from an
+  // earlier pass that was technically drawing correctly but too small/thin at the tower's
+  // silhouette color to actually read against its neighbours
+  const wtx=W*.53, wtw=42*u, wth=118*u; c.fillStyle=sil;
+  c.beginPath();
+  c.moveTo(wtx-wtw*0.30,horizon);
+  c.bezierCurveTo(wtx-wtw*0.62,horizon-wth*0.35, wtx-wtw*0.60,horizon-wth*0.78, wtx-wtw*0.50,horizon-wth);
+  c.lineTo(wtx+wtw*0.50,horizon-wth);
+  c.bezierCurveTo(wtx+wtw*0.60,horizon-wth*0.78, wtx+wtw*0.62,horizon-wth*0.35, wtx+wtw*0.30,horizon);
+  c.closePath(); c.fill();
+
+  // Cheesegrater — a tall wedge tapering sharply up to one side
+  const cgx=W*.665, cgw=26*u, cgh=150*u; c.fillStyle=sil;
+  c.beginPath();
+  c.moveTo(cgx-cgw/2,horizon); c.lineTo(cgx-cgw/2,horizon-cgh*0.14);
+  c.lineTo(cgx+cgw/2,horizon-cgh); c.lineTo(cgx+cgw/2,horizon);
+  c.closePath(); c.fill();
+
+  // The Shard (only when requested) — one continuous tapering glass silhouette, with a
+  // slightly irregular multi-point peak (echoing the real building's uneven glass fins)
+  // instead of a separate spire drawn from thin strokes
   if(opt.shard){
-    const shx=W*.60, shh=214*u, shw=42*u;
-    const bodyH=shh*0.90;
+    const shx=W*.60, shh=214*u, shw=42*u, tipY=horizon-shh;
     c.fillStyle= sil;
-    c.beginPath(); c.moveTo(shx-shw/2,horizon); c.lineTo(shx-shw*0.025,horizon-bodyH); c.lineTo(shx+shw*0.025,horizon-bodyH); c.lineTo(shx+shw/2,horizon); c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(shx-shw/2,horizon);
+    c.lineTo(shx-shw*0.11,horizon-shh*0.86);
+    c.lineTo(shx-shw*0.045,horizon-shh*0.95);
+    c.lineTo(shx-shw*0.016,tipY+6*u);
+    c.lineTo(shx,tipY);
+    c.lineTo(shx+shw*0.016,tipY+9*u);
+    c.lineTo(shx+shw*0.05,horizon-shh*0.92);
+    c.lineTo(shx+shw*0.12,horizon-shh*0.84);
+    c.lineTo(shx+shw/2,horizon);
+    c.closePath(); c.fill();
     c.strokeStyle= night?'rgba(150,180,220,.32)':'rgba(255,255,255,.4)'; c.lineWidth=1*u;
-    for(let i=1;i<9;i++){ const yy=horizon-bodyH*i/9, hw=shw/2*(1-i/9); c.beginPath(); c.moveTo(shx-hw,yy); c.lineTo(shx+hw,yy); c.stroke(); }
-    c.beginPath(); c.moveTo(shx,horizon); c.lineTo(shx,horizon-bodyH); c.stroke();
-    // spire — a tight bundle of thin fins that lean inward and actually converge to a point,
-    // with an irregular peak, echoing the real building's crown instead of parallel ticks
-    const spBase=horizon-bodyH, spCol= sil;
-    const fins=[[-2.6,.52],[-1.1,.86],[0.2,1],[1.4,.70],[2.8,.44]];
-    c.strokeStyle=spCol; c.lineCap='round'; c.lineWidth=1.3*u;
-    for(const f of fins){
-      const bx=shx+f[0]*u, tx=shx+f[0]*u*0.16, ty=spBase-(shh-bodyH+16*u)*f[1];
-      c.beginPath(); c.moveTo(bx,spBase+2*u); c.lineTo(tx,ty); c.stroke();
-    }
-    c.lineCap='butt';
+    for(let i=1;i<10;i++){ const yy=horizon-shh*i/10, hw=(shw/2)*(1-i/10)*0.95; c.beginPath(); c.moveTo(shx-hw,yy); c.lineTo(shx+hw,yy); c.stroke(); }
+    c.beginPath(); c.moveTo(shx,horizon); c.lineTo(shx,tipY); c.stroke();
   }
 
   // Tower Bridge — twin Gothic towers with a stepped pinnacle roof, a high-level walkway
@@ -1557,11 +1576,20 @@ function drawCrown(c,p,t,k,ghost,tiny){
     post(U*0.03,U*0.010,Y-H*0.50,Y-H*0.92);
     cap(U*0.012,H*0.045,Y-H);
   }
-  else if(crown==='gothic'){              // Big Ben — one clear clock block, a distinct smaller belfry block
-                                           // above it, then a short, modest pyramidal spire on top
+  else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage with corner
+                                           // pinnacles, a taller louvred belfry with its own small
+                                           // pinnacles, and a proper tall, slender iron spire —
+                                           // matching real photos instead of a stubby cone
     const bw=U*0.28, bh=U*0.62, bTop=Y-bh;
     c.fillStyle=fill; c.fillRect(X-bw,bTop,bw*2,bh);              // flat two-tone square block, same
     c.fillStyle=dark; c.fillRect(X,bTop,bw,bh);                   // language as every other crown
+    // corner pinnacles flanking the clock stage — small pointed turrets, the detail that most
+    // immediately reads as "Big Ben" rather than a generic square tower
+    const pinW=bw*0.34, pinH=bh*0.22;
+    [-1,1].forEach(side=>{ const px=X+side*bw*0.86;
+      c.fillStyle=fill; c.fillRect(px-pinW/2,bTop-pinH*0.55,pinW,pinH*0.55);
+      c.beginPath(); c.moveTo(px-pinW*0.6,bTop-pinH*0.55); c.lineTo(px,bTop-pinH); c.lineTo(px+pinW*0.6,bTop-pinH*0.55); c.closePath(); c.fill();
+    });
     const cy=bTop+bh*0.46, cr=bw*0.62;
     if(tiny){
       c.fillStyle= ghost?'rgba(230,248,255,.85)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
@@ -1577,16 +1605,27 @@ function drawCrown(c,p,t,k,ghost,tiny){
       c.rotate(2.05); c.fillRect(-cr*0.06,-cr*0.4,cr*0.12,cr*0.42);
       c.restore();
     }
-    // belfry — a clearly separate second, smaller block
-    const belH=H*0.14, bbw=U*0.205, belTop=bTop-belH;
+    // belfry — taller than before, with faint louvre slits (the actual bell housing on the
+    // real tower), topped with its own small corner pinnacles at the base of the spire
+    const belH=H*0.20, bbw=U*0.205, belTop=bTop-belH;
     c.fillStyle=fill; c.fillRect(X-bbw,belTop,bbw*2,belH);
     c.fillStyle=dark; c.fillRect(X,belTop,bbw,belH);
-    // a short, modest pyramidal spire sitting directly on the belfry — small, not a tall needle
-    const spH=H*0.17;
-    c.fillStyle=fill; c.beginPath(); c.moveTo(X-bbw*0.85,belTop); c.lineTo(X,belTop-spH); c.lineTo(X+bbw*0.85,belTop); c.closePath(); c.fill();
-    c.fillStyle=dark; c.beginPath(); c.moveTo(X,belTop); c.lineTo(X,belTop-spH); c.lineTo(X+bbw*0.85,belTop); c.closePath(); c.fill();
-    cap(U*0.010,H*0.026,belTop-spH);
-    c.fillStyle= ghost?fill:'#e2c15e'; c.beginPath(); c.arc(X,belTop-spH-U*0.010,U*0.020,0,7); c.fill();
+    if(!tiny){
+      c.strokeStyle= ghost?'rgba(230,248,255,.45)':'rgba(0,0,0,.26)'; c.lineWidth=Math.max(bbw*0.05,0.6);
+      [-0.55,0,0.55].forEach(lx=>{ c.beginPath(); c.moveTo(X+lx*bbw,belTop+belH*0.18); c.lineTo(X+lx*bbw,belTop+belH*0.86); c.stroke(); });
+    }
+    const pin2W=bbw*0.42, pin2H=belH*0.34;
+    [-1,1].forEach(side=>{ const px=X+side*bbw*0.82;
+      c.fillStyle=fill; c.beginPath(); c.moveTo(px-pin2W/2,belTop); c.lineTo(px,belTop-pin2H); c.lineTo(px+pin2W/2,belTop); c.closePath(); c.fill();
+    });
+    // tall, slender iron spire tapering to a thin mast — proportioned like the real spire,
+    // not the previous stubby pyramid
+    const spH=H*0.34, spBaseW=bbw*0.80;
+    c.fillStyle=fill; c.beginPath(); c.moveTo(X-spBaseW,belTop); c.lineTo(X-spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW,belTop); c.closePath(); c.fill();
+    c.fillStyle=dark; c.beginPath(); c.moveTo(X,belTop); c.lineTo(X,belTop-spH*0.78); c.lineTo(X+spBaseW*0.07,belTop-spH*0.78); c.lineTo(X+spBaseW,belTop); c.closePath(); c.fill();
+    post(U*0.011,U*0.006,belTop-spH*0.76,belTop-spH);
+    cap(U*0.009,H*0.03,belTop-spH);
+    c.fillStyle= ghost?fill:'#e2c15e'; c.beginPath(); c.arc(X,belTop-spH-U*0.012,U*0.018,0,7); c.fill();
   }
   else if(crown==='deco'){                // Empire State — solid stepped setbacks + mast + cap block
     let yy=Y; const tiers=[[0.20,0.16],[0.14,0.14],[0.085,0.14]];
