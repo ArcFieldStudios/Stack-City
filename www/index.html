@@ -373,7 +373,7 @@
 <div class="screen" id="completeScreen">
   <div class="eyebrow">YOU BUILT THEM ALL</div>
   <div class="title"><span class="brand">CITY&nbsp;STACK</span></div>
-  <div class="subtitle">TEN CITY ICONS &middot; EIGHT CITIES &mdash; MASTER BUILDER</div>
+  <div class="subtitle">NINE CITY ICONS &middot; SEVEN CITIES &mdash; MASTER BUILDER</div>
   <div class="resline" id="completeStats">TOTAL PERFECT PLACEMENTS&nbsp;<b>0</b></div>
   <div class="tap-hint">TAP TO PLAY AGAIN</div>
 </div>
@@ -519,24 +519,6 @@ function cnPlate(t){
   const k = 0.15*(1-podInf);
   return radial(30, R, -Math.PI/2, k, 3);
 }
-/* EIFFEL TOWER — wide splayed corner legs, deep concave sweep, two platform shelves */
-function eiffelPlate(t){
-  // Two prior passes tried to fake the tower's 4 open legs with a star-shaped cosine
-  // modulation. That's the wrong tool for this game's constraint: every floor is one
-  // solid filled polygon, so a modulated star doesn't read as "4 legs with gaps between
-  // them" -- it reads as an odd blob or plus-sign once actually stacked. Dropped that
-  // entirely. This is a clean, honestly-tapering square silhouette, the same single-
-  // polygon language every other building in the game already uses: a dramatically wide,
-  // flared base, two sharp platform ledges, then a long, thin mast to the antenna.
-  let prof;
-  if(t<0.22){ const k=t/0.22; prof = 0.95 - 0.58*Math.pow(k,1.1); }
-  else if(t<0.40){ const k=(t-0.22)/0.18; prof = 0.37 - 0.16*k; }
-  else { const k=(t-0.40)/0.60; prof = 0.21*Math.pow(1-k,1.7) + 0.030; }
-  const plat1 = Math.exp(-Math.pow((t-0.22)/0.020,2)) * 0.055;
-  const plat2 = Math.exp(-Math.pow((t-0.40)/0.016,2)) * 0.035;
-  const R = R0*(prof + plat1 + plat2);
-  return nGon(4, Math.max(R,R0*0.05), Math.PI/4);
-}
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
   const base = 0.60 - 0.05*t;
@@ -595,9 +577,6 @@ const LEVELS=[
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
     crown:'shard', floorH:16, plate:shardPlate,
     pal:{h0:200,h1:207, s0:38,s1:22, l0:58,l1:86} },
-  { name:'EIFFEL TOWER', city:'PARIS', metresTxt:'330 M', floors:42, bg:'paris',
-    crown:'eiffel', floorH:15, plate:eiffelPlate,
-    pal:{h0:28,h1:34, s0:26,s1:18, l0:40,l1:56} },
   { name:'MILAD TOWER', city:'TEHRAN', metresTxt:'435 M', floors:48, bg:'tehran',
     crown:'mast', floorH:16, plate:miladPlate,
     pal:{h0:210,h1:208, s0:8,s1:5, l0:74,l1:90} },
@@ -820,11 +799,6 @@ function canadaFlag(c,x,y,w,h){
   MAPLE.forEach((p,i)=>{ const px=cx+p[0]*s, py=cy+p[1]*s; i?c.lineTo(px,py):c.moveTo(px,py); });
   c.closePath(); c.fill();
 }
-function franceFlag(c,x,y,w,h){
-  c.fillStyle='#0055a4'; c.fillRect(x,y,w/3,h);
-  c.fillStyle='#ffffff'; c.fillRect(x+w/3,y,w/3,h);
-  c.fillStyle='#ef4135'; c.fillRect(x+2*w/3,y,w/3,h);
-}
 function star5(c,cx,cy,r,rot){
   c.beginPath();
   for(let i=0;i<5;i++){ const a=rot-Math.PI/2+i*2*Math.PI/5;
@@ -857,7 +831,7 @@ function pole(c,flagFn,x,groundY,poleH,fw){
 
 /* ==================== SCENES ==================== */
 const scenes={};
-function buildAllScenes(){ ['tutorial','londonday','londonnight','dubai','nycplain','nycwtc','tehran','toronto','paris','shanghai','kualalumpur'].forEach(k=>scenes[k]=buildScene(k)); }
+function buildAllScenes(){ ['tutorial','londonday','londonnight','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur'].forEach(k=>scenes[k]=buildScene(k)); }
 function newSceneCanvas(){ const cv=document.createElement('canvas'); cv.width=W*DPR; cv.height=H*DPR;
   const c=cv.getContext('2d'); c.setTransform(DPR,0,0,DPR,0,0); return {cv,c}; }
 function clouds(c,horizon,alpha){
@@ -1316,57 +1290,6 @@ function buildScene(key){
     pole(c,canadaFlag,W*.90,horizon+6,38*u,23*u);
   }
 
-  else if(key==='paris'){
-    const sky=c.createLinearGradient(0,0,0,horizon);
-    sky.addColorStop(0,'#6ea8d8'); sky.addColorStop(.5,'#a9c8dd'); sky.addColorStop(1,'#e7dcc6');
-    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
-    c.fillStyle='rgba(255,250,230,.88)'; c.beginPath(); c.arc(W*.80,horizon*.16,25,0,7); c.fill();
-    clouds(c,horizon,.6);
-    // Sacre-Coeur on the hill (left)
-    c.fillStyle='#e9e4d6';
-    const shx=W*.14, shy=horizon-96*u;
-    c.beginPath(); c.ellipse(shx,shy,20*u,20*u,0,Math.PI,0); c.fill();
-    c.fillRect(shx-20*u,shy,40*u,26*u);
-    c.beginPath(); c.ellipse(shx-24*u,shy+6,7*u,10*u,0,Math.PI,0); c.fill();
-    c.beginPath(); c.ellipse(shx+24*u,shy+6,7*u,10*u,0,Math.PI,0); c.fill();
-    c.fillStyle='#d8cfba'; c.fillRect(shx-2*u,shy-30*u,4*u,10*u);
-    // Haussmann rooftops
-    c.fillStyle='rgba(150,140,120,.5)';
-    let x=0; while(x<W){ const w=30+Math.random()*40,h=34+Math.random()*54;
-      c.fillRect(x,horizon-h,w,h);
-      c.fillStyle='#6b7079'; c.beginPath(); c.moveTo(x,horizon-h); c.lineTo(x+w/2,horizon-h-10*u); c.lineTo(x+w,horizon-h); c.closePath(); c.fill();
-      c.fillStyle='rgba(150,140,120,.5)'; x+=w+5; }
-    // Arc de Triomphe
-    const ax=W*.44, aw=66*u, ah=64*u;
-    c.fillStyle='#ddd3bd';
-    c.fillRect(ax-aw/2,horizon-ah,aw,ah);
-    c.save(); c.globalCompositeOperation='destination-out';
-    c.beginPath(); c.moveTo(ax-aw*0.2,horizon); c.lineTo(ax-aw*0.2,horizon-ah*0.55);
-    c.quadraticCurveTo(ax,horizon-ah*0.8,ax+aw*0.2,horizon-ah*0.55); c.lineTo(ax+aw*0.2,horizon); c.closePath(); c.fill();
-    c.restore();
-    c.fillStyle='#cabfa6'; c.fillRect(ax-aw/2,horizon-ah,aw,6*u);
-    // distant Eiffel silhouette (the star of this level, small & faint in bg)
-    const efx=W*.72, efh=190*u;
-    c.strokeStyle='rgba(120,110,95,.55)'; c.lineWidth=2.5*u;
-    c.beginPath(); c.moveTo(efx-26*u,horizon); c.quadraticCurveTo(efx-8*u,horizon-efh*0.5,efx,horizon-efh);
-    c.quadraticCurveTo(efx+8*u,horizon-efh*0.5,efx+26*u,horizon); c.stroke();
-    c.beginPath(); c.moveTo(efx-19*u,horizon-efh*0.28); c.lineTo(efx+19*u,horizon-efh*0.28); c.stroke();
-    c.beginPath(); c.moveTo(efx-10*u,horizon-efh*0.62); c.lineTo(efx+10*u,horizon-efh*0.62); c.stroke();
-    // ground + Seine
-    const grd=c.createLinearGradient(0,horizon,0,H);
-    grd.addColorStop(0,'#c7bfa8'); grd.addColorStop(1,'#a89f86');
-    c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
-    const wy=horizon+(H-horizon)*0.4;
-    c.fillStyle='#6f97b4'; c.fillRect(0,wy,W,H-wy);
-    c.fillStyle='rgba(255,255,255,.25)';
-    for(let i=0;i<40;i++) c.fillRect(Math.random()*W,wy+Math.random()*(H-wy),14+Math.random()*20,1.4);
-    pole(c,franceFlag,W*.10,horizon+6,40*u,24*u);
-    pole(c,franceFlag,W*.34,horizon+6,36*u,22*u);
-    pole(c,franceFlag,W*.58,horizon+6,42*u,25*u);
-    pole(c,franceFlag,W*.88,horizon+6,38*u,23*u);
-    franceFlag(c,ax+aw*0.1,horizon-ah-16*u,22*u,13*u);
-  }
-
   else if(key==='shanghai'){
     const sky=c.createLinearGradient(0,0,0,horizon);
     sky.addColorStop(0,'#2f5a86'); sky.addColorStop(.5,'#6f92b0'); sky.addColorStop(1,'#d8c7b0');
@@ -1572,7 +1495,7 @@ function drawPrismLite(c,poly,y,h,colIdx){
 
 /* ==================== CROWNS / SPIRE ==================== */
 function anchorOf(b){ const ct=polyCentroid(b.poly); return proj(ct[0], b.y+b.h, ct[1]); }
-const CROWN_H={ shard:96, needle:180, antenna:150, mast:150, eiffel:126, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
+const CROWN_H={ shard:96, needle:180, antenna:150, mast:150, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
 function crownHeight(){ return CROWN_H[L().crown] || 120; }
 function drawCrown(c,p,t,k,ghost,tiny){
   const crown=L().crown; if(crown==='none') return;
@@ -1624,14 +1547,6 @@ function drawCrown(c,p,t,k,ghost,tiny){
     post(U*0.033,U*0.009,Y-H*0.18,Y-H*0.90);
     c.fillStyle=fill; [0.42,0.64,0.84].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*(0.05-f*0.025),U*0.017,0,0,7); c.fill(); });
     cap(U*0.011,H*0.045,Y-H);
-  }
-  else if(crown==='eiffel'){              // Eiffel — the lattice mast simply continues tapering
-                                           // up to a fine antenna tip; not a separate
-                                           // campanile-and-cupola block sitting on top of it
-    post(U*0.05,U*0.020,Y,Y-H*0.45);
-    post(U*0.020,U*0.008,Y-H*0.44,Y-H*0.80);
-    cap(U*0.010,H*0.03,Y-H*0.80);
-    post(U*0.006,U*0.0015,Y-H*0.77,Y-H);
   }
   else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage on gothic-arch
                                            // louvres with corner pinnacles, a gilded collar, a
@@ -2039,7 +1954,7 @@ const FREE_UI={
   bg:[['Day','day'],['Dusk','dusk'],['Night','night'],['Snow','snow'],
       ['London Day','londonday'],['London Night','londonnight'],['Dubai','dubai'],
       ['New York','nycplain'],['New York · WTC','nycwtc'],['Tehran','tehran'],
-      ['Toronto','toronto'],['Paris','paris'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
+      ['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
 };
 function buildFreeOpts(){
