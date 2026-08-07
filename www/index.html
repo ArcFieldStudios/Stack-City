@@ -43,7 +43,8 @@
   .btn.primary { background:#ffe08a; color:#1b2338; border-color:#ffe08a; }
   .lvl-btn { text-align:left; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
   .lvl-btn small { display:block; font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.55); margin-top:4px; font-weight:400; }
-  .lvl-btn .n { font-size:11px; color:#ffe08a; letter-spacing:2px; }
+  .lvl-btn .n { font-size:11px; color:#ffe08a; letter-spacing:2px; text-align:right; }
+  .lvl-btn .n small { display:block; font-size:8px; letter-spacing:1px; color:rgba(255,224,138,.65); margin-top:3px; font-weight:600; }
   .lvl-btn.free { background:linear-gradient(90deg,rgba(255,120,120,.25),rgba(120,180,255,.25)); border-color:rgba(255,224,138,.5); }
   .lvl-btn.locked { opacity:.45; cursor:not-allowed; }
   .lvl-btn.locked .n { color:rgba(255,255,255,.55); }
@@ -295,6 +296,7 @@
     <button class="btn primary" id="btnResume">RESUME</button>
     <button class="btn" id="btnLevels">SELECT LEVEL</button>
     <button class="btn" id="btnRestart">RESTART LEVEL</button>
+    <button class="btn" id="btnMute">SOUND: ON</button>
     <button class="btn" id="btnMainMenu">MAIN MENU</button>
   </div>
   <div class="panel" id="pauseLevels" style="display:none">
@@ -308,6 +310,7 @@
     <h1>MENU</h1>
     <button class="btn primary" id="btnOptLevels">SELECT LEVEL</button>
     <button class="btn" id="btnOptFree">FREE PLAY</button>
+    <button class="btn" id="btnOptMute">SOUND: ON</button>
     <button class="btn" id="btnOptNoAds">NO ADS</button>
     <div class="back" id="btnOptBack">← BACK</div>
   </div>
@@ -631,9 +634,11 @@ function loadProgress(){
       hearts: (p.hearts==null?MAX_HEARTS:Math.max(0,p.hearts|0)),
       lastHeartDay: p.lastHeartDay||'',
       noAds: !!p.noAds,
-      ageBand: p.ageBand||'' }; }
+      ageBand: p.ageBand||'',
+      muted: !!p.muted,
+      levelBest: (p.levelBest && typeof p.levelBest==='object') ? p.levelBest : {} }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'' };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'', muted:false, levelBest:{} };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
@@ -671,8 +676,43 @@ function toast(msg){
   void el.offsetWidth;  // restart animation
   el.classList.add('show');
 }
+/* ==================== ADMOB REWARDED ADS ====================
+   These are Google's public TEST ad unit / app IDs (safe to ship in a build that's still
+   in testing — they only ever serve clearly-labelled test creatives and earn nothing).
+   Swap ADMOB_REWARDED_ID here and the APPLICATION_ID meta-data in AndroidManifest.xml for
+   the real ones from an actual AdMob account before this goes out for real.
+   On web (this file opened in a plain browser tab, or the preview iframe) window.Capacitor
+   is never injected, so admob() returns null and playAdForHeart() below falls back to the
+   old simulated countdown untouched — nothing here can break the browser preview. */
+const ADMOB_REWARDED_ID='ca-app-pub-3940256099942544/5224354917';
+function admob(){
+  const cap=window.Capacitor;
+  return (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.AdMob) || null;
+}
+let admobRewardReady=false;
+function admobLoadRewarded(){
+  const AdMob=admob(); if(!AdMob) return;
+  admobRewardReady=false;
+  AdMob.prepareRewardVideoAd({ adId:ADMOB_REWARDED_ID, isTesting:true })
+    .then(()=>{ admobRewardReady=true; })
+    .catch(()=>{ admobRewardReady=false; });
+}
+(function initAdMob(){
+  const AdMob=admob(); if(!AdMob) return;
+  AdMob.initialize({ initializeForTesting:true }).then(admobLoadRewarded).catch(()=>{});
+})();
+
 function playAdForHeart(cb){
   if(progress.hearts>=MAX_HEARTS){ toast('HEARTS ALREADY FULL'); return; }
+  const AdMob=admob();
+  if(AdMob && admobRewardReady){
+    admobRewardReady=false;
+    AdMob.showRewardVideoAd()
+      .then(()=>{ grantHeart(); toast('+1 HEART ♥'); if(cb) cb(); })
+      .catch(()=>{ toast('AD FAILED — TRY AGAIN'); })
+      .finally(admobLoadRewarded);
+    return;
+  }
   const overlay=S('adOverlay'); const timerEl=S('adTimer'); const btn=S('adSkip');
   let sec=5; timerEl.textContent=sec; btn.disabled=true; btn.textContent='WATCHING…';
   overlay.classList.add('show');
@@ -712,6 +752,7 @@ const isSpireIdx=i=> !isFree && i>=N;
 let AC=null;
 function audio(){ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); return AC; }
 function tone(f,d,type,vol,slide){
+  if(progress.muted) return;
   type=type||'sine'; vol=vol===undefined?.18:vol;
   try{ const ac=audio(),o=ac.createOscillator(),g=ac.createGain();
     o.type=type; o.frequency.setValueAtTime(f,ac.currentTime);
@@ -727,6 +768,27 @@ const sndPerfect=c=>{const b=520*Math.pow(1.12,Math.min(c,10)); tone(b,.34,'sine
 const sndOver=()=>tone(220,.5,'sawtooth',.12,55);
 const sndWin=()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.5,'sine',.18),i*130));
 const sndClick=()=>tone(600,.06,'square',.06);
+function updateMuteButtons(){
+  const label = progress.muted ? 'SOUND: OFF' : 'SOUND: ON';
+  const b1=S('btnMute'), b2=S('btnOptMute');
+  if(b1) b1.textContent=label;
+  if(b2) b2.textContent=label;
+}
+function toggleMute(){ progress.muted=!progress.muted; saveProgress(); updateMuteButtons(); if(!progress.muted) sndClick(); }
+
+/* ==================== HAPTICS ==================== */
+/* Uses the native Haptics plugin only where Capacitor actually injects it (a real device/
+   emulator build) — window.Capacitor is absent in a plain browser tab or this game's own
+   preview iframe, so this quietly no-ops there instead of throwing. */
+function haptic(kind){
+  try{
+    const cap=window.Capacitor;
+    if(!cap || !cap.isNativePlatform || !cap.isNativePlatform() || !cap.Plugins || !cap.Plugins.Haptics) return;
+    const Haptics=cap.Plugins.Haptics;
+    if(kind==='error') Haptics.notification({ type:'ERROR' });
+    else Haptics.impact({ style: kind==='medium' ? 'MEDIUM' : 'LIGHT' });
+  }catch(e){}
+}
 
 /* ==================== STATE ==================== */
 let state='menu', paused=false, started=false;
@@ -1775,14 +1837,14 @@ function place(){
     combo++; perfects++; sndPerfect(combo);
     flashEl.classList.remove('show'); void flashEl.offsetWidth; flashEl.classList.add('show');
     const pw=proj(icx,mover.y,icz); sparks.push({x:pw.x,y:pw.y,r:12,life:1});
-    sndPlace();
+    sndPlace(); haptic('light');
   } else {
     combo=0;
     const winEdge = delta>0 ? (ai===0?win.x1:win.z1) : (ai===0?win.x0:win.z0);
     const chunk = clipHalf(dropped, ai, winEdge, delta<0);
     if(chunk.length>=3)
       debris.push({poly:chunk, y:mover.y, h:mover.h, i:mover.i, vy:1.4, rot:0, vr:(Math.random()-.5)*.07, life:1});
-    sndSlice(); sndPlace(); shakeT=.13;
+    sndSlice(); sndPlace(); shakeT=.13; haptic('medium');
   }
 
   stack.push({poly:survivor, cx:ncx, cz:ncz, y:mover.y, h:mover.h, i:mover.i, isSpire:mover.isSpire});
@@ -1794,7 +1856,7 @@ function gameOver(){
   tutorHide();
   if(mover && mover.poly && mover.poly.length>=3 && !debris.some(d=>d.i===mover.i&&d.y===mover.y))
     debris.push({poly:mover.poly, y:mover.y, h:mover.h, i:mover.i, vy:2, rot:0, vr:(Math.random()-.5)*.11, life:1});
-  sndOver(); shakeT=.32;
+  sndOver(); shakeT=.32; haptic('error');
   if(isFree) finishFree(); else finish(false);
 }
 
@@ -1864,6 +1926,7 @@ function finish(won){
   ['resFloors','matchScore','matchLabel','matchGrade'].forEach(id=>S(id).style.display = isTutorialWin ? 'none' : '');
   S('readyMsg').style.display = isTutorialWin ? 'block' : 'none';
   const acc=accuracy();
+  if(won && curLevel>0 && acc>(progress.levelBest[curLevel]||0)){ progress.levelBest[curLevel]=acc; saveProgress(); }
   S('resEyebrow').textContent = won ? (curLevel===0 ? 'TUTORIAL COMPLETE' : 'LEVEL '+(curLevel+1)+' COMPLETE') : 'TOWER COLLAPSED';
   S('resTitle').textContent = L().name;
   S('resFloors').innerHTML = 'FLOORS&nbsp;<b>'+score+' / '+N+'</b>&nbsp;&nbsp;&middot;&nbsp;&nbsp;PERFECT&nbsp;<b>'+perfects+'</b>';
@@ -1936,7 +1999,9 @@ function buildLevelList(){
     const unlocked = isLevelUnlocked(i);
     const lockIcon = unlocked ? '' : '<span class="lock">\ud83d\udd12</span>';
     const num = unlocked ? ('0'+(i+1)).slice(-2) : '\u2014';
-    b.innerHTML='<span>'+lockIcon+lv.name+'<small>'+lv.city+' \u00b7 '+lv.metresTxt+'</small></span><span class="n">'+num+'</span>';
+    const best = progress.levelBest[i];
+    const bestHtml = (unlocked && best!=null) ? '<small>'+best+'%</small>' : '';
+    b.innerHTML='<span>'+lockIcon+lv.name+'<small>'+lv.city+' \u00b7 '+lv.metresTxt+'</small></span><span class="n">'+num+bestHtml+'</span>';
     if(!unlocked){ b.classList.add('locked');
       b.onclick=e=>{ e.stopPropagation(); sndClick(); };
     } else {
@@ -2023,6 +2088,8 @@ S('btnOptLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=t
 S('btnOptFree').onclick=e=>{ e.stopPropagation(); sndClick(); buildFreeOpts(); showPanel('free'); };
 S('btnOptNoAds').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); buyNoAds(); };
 S('btnOptBack').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
+S('btnMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
+S('btnOptMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
 S('btnHeartPlus').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
 S('btnUseHearts').onclick=e=>{ e.stopPropagation();
   if(progress.hearts<=0) return;
@@ -2218,6 +2285,7 @@ function frame(now){
 /* ==================== BOOT ==================== */
 let autoTutorial=false;
 resize(); reset(); state='menu'; renderDots('menuDots',-1);
+updateMuteButtons();
 requestAnimationFrame(frame);
 
 function proceedPastGate(){
