@@ -576,7 +576,7 @@ const LEVELS=[
     pal:{h0:204,h1:204, s0:12,s1:12, l0:64,l1:80} },
   { name:'BIG BEN', city:'LONDON', metresTxt:'96 M', floors:30, bg:'londonday',
     crown:'gothic', floorH:15, plate:bigBenPlate,
-    pal:{h0:40,h1:44, s0:24,s1:16, l0:60,l1:80} },
+    pal:{h0:38,h1:40, s0:12,s1:7, l0:68,l1:85} },
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
     crown:'shard', floorH:16, plate:shardPlate,
     pal:{h0:200,h1:207, s0:38,s1:22, l0:58,l1:86} },
@@ -1783,37 +1783,50 @@ function drawCrown(c,p,t,k,ghost,tiny){
       c.fillStyle= ghost?fill:'#f2b921'; c.beginPath(); c.arc(px,py-ph-U*0.006,U*0.009,0,7); c.fill(); };
     const gold= ghost?fill:'#f2b921', darkCol= ghost?'rgba(20,40,55,.55)':'rgba(0,0,0,.32)';
 
-    // clock stage, sitting on a pair of gothic-arch louvre openings
+    // clock stage — a single, clearly bounded block sitting square on top of the shaft,
+    // outlined so it visually reads as its own tier rather than blending into the stonework
+    // below it
     const bw=U*0.28, bh=U*0.56, bTop=Y-bh;
     c.fillStyle=bodyFill; c.fillRect(X-bw,bTop,bw*2,bh);
     c.fillStyle=bodyDark; c.fillRect(X,bTop,bw,bh);
+    c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=Math.max(U*0.006,0.7);
+    c.strokeRect(X-bw,bTop,bw*2,bh);
     if(!tiny){ archAt(X-bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); archAt(X+bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); }
     [-1,1].forEach(side=>pinnacleAt(X+side*bw*0.90,bTop,bw*0.30,bh*0.30));
 
     const cy=bTop+bh*0.42, cr=bw*0.62;
     if(tiny){
       c.fillStyle= ghost?'rgba(230,248,255,.85)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
-      c.strokeStyle= ghost?'rgba(120,205,235,.9)':'#8a7d4a'; c.lineWidth=Math.max(cr*0.11,0.6);
+      c.strokeStyle= ghost?'rgba(120,205,235,.9)':gold; c.lineWidth=Math.max(cr*0.11,0.6);
       c.beginPath(); c.arc(X,cy,cr*0.88,0,7); c.stroke();
     } else {
       c.fillStyle= ghost?'rgba(230,248,255,.9)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
-      c.fillStyle= ghost?'rgba(70,130,160,.9)':'#7a6c3e'; c.beginPath(); c.arc(X,cy,cr,0,7); c.arc(X,cy,cr*0.87,0,7,true); c.fill();
-      c.fillStyle= ghost?'rgba(40,90,120,.95)':'#2e2a1c';
-      [0,3,6,9].forEach(hr=>{ const a=hr/12*2*Math.PI-Math.PI/2; c.beginPath(); c.arc(X+Math.cos(a)*cr*0.74,cy+Math.sin(a)*cr*0.74,cr*0.07,0,7); c.fill(); });
+      // gilded rim around the dial — Big Ben's clock faces are famously gold-framed, not stone
+      c.fillStyle= ghost?'rgba(70,130,160,.9)':gold; c.beginPath(); c.arc(X,cy,cr,0,7); c.arc(X,cy,cr*0.87,0,7,true); c.fill();
+      // twelve black tick marks around the dial, plus bold black hands — the one place the
+      // real tower reads as sharp black-on-cream rather than stone-on-stone
+      c.fillStyle= ghost?'rgba(20,50,70,.95)':'#141210';
+      for(let hr=0; hr<12; hr++){ const a=hr/12*2*Math.PI-Math.PI/2;
+        c.beginPath(); c.arc(X+Math.cos(a)*cr*0.74,cy+Math.sin(a)*cr*0.74,cr*(hr%3===0?0.075:0.04),0,7); c.fill(); }
       c.save(); c.translate(X,cy);
-      c.fillRect(-cr*0.05,-cr*0.56,cr*0.10,cr*0.58);
-      c.rotate(2.05); c.fillRect(-cr*0.06,-cr*0.4,cr*0.12,cr*0.42);
+      c.fillRect(-cr*0.055,-cr*0.58,cr*0.11,cr*0.60);
+      c.rotate(2.05); c.fillRect(-cr*0.065,-cr*0.42,cr*0.13,cr*0.44);
       c.restore();
     }
 
     // gilded cresting collar separating the clock stage from the belfry
-    const collar1H=H*0.025;
+    const collar1H=H*0.030;
     c.fillStyle=gold; c.fillRect(X-bw*1.02,bTop-collar1H,bw*2.04,collar1H);
+    c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=Math.max(U*0.004,0.5); c.strokeRect(X-bw*1.02,bTop-collar1H,bw*2.04,collar1H);
 
-    // belfry — the louvred bell stage, narrower than the clock stage, with its own pinnacles
-    const belH=H*0.22, bbw=U*0.205, belTop=bTop-collar1H-belH;
+    // belfry — the louvred bell stage. Held to the exact same width as the clock stage below
+    // it (real photos: it doesn't step inward at all here), with its own pinnacles and a
+    // black outline so it reads as its own distinct block too
+    const belH=H*0.22, bbw=bw, belTop=bTop-collar1H-belH;
     c.fillStyle=bodyFill; c.fillRect(X-bbw,belTop,bbw*2,belH);
     c.fillStyle=bodyDark; c.fillRect(X,belTop,bbw,belH);
+    c.strokeStyle='rgba(0,0,0,.5)'; c.lineWidth=Math.max(U*0.006,0.7);
+    c.strokeRect(X-bbw,belTop,bbw*2,belH);
     if(!tiny){ archAt(X-bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); archAt(X+bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); }
     const pin2H=belH*0.40;
     [-1,1].forEach(side=>pinnacleAt(X+side*bbw*0.86,belTop,bbw*0.40,pin2H));
