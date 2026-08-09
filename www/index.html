@@ -655,7 +655,13 @@ if(progress.freeConfig){
 }
 function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
 function unlockLevel(i){ if(i>progress.highestUnlocked){ progress.highestUnlocked=i; saveProgress(); } }
-function setLastLevel(i){ if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); } }
+function setLastLevel(i){
+  // The tutorial (level 0) is a one-time onboarding step, not a place to resume progress —
+  // once it's ever been beaten, nothing (including manually replaying it from the level
+  // list) is allowed to make it the "last level" the app reopens into again.
+  if(i===0 && (progress.highestUnlocked>=1 || progress.unlockedAll)) return;
+  if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); }
+}
 /* Age-gate: minimal age-band self-declaration, no birthdate collected. Downstream
    integrations (PostHog, AdMob) read isUnder13()/isMinor() to decide how much they
    can track or personalize — under-13 must run in a restricted/child-directed mode. */
@@ -2263,7 +2269,10 @@ S('btnFreeStart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel();
 /* ==================== FLOW ==================== */
 function showMenu(){
   isFree=false; autoTutorial=false; paused=false; transitioning=false;
-  const i = Math.max(0, Math.min(LEVELS.length-1, progress.lastLevel|0));
+  let i = Math.max(0, Math.min(LEVELS.length-1, progress.lastLevel|0));
+  // Belt-and-braces for save data written before this guard existed: once the tutorial is
+  // done, level 0 is never a valid resume point — fall back to the first real level.
+  if(i===0 && (progress.highestUnlocked>=1 || progress.unlockedAll)) i=1;
   curLevel = i;
   ['introScreen','resultScreen','completeScreen'].forEach(id=>S(id).classList.remove('visible'));
   S('pausePanel').classList.remove('show');
