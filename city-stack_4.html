@@ -376,7 +376,7 @@
 <div class="screen" id="completeScreen">
   <div class="eyebrow">YOU BUILT THEM ALL</div>
   <div class="title"><span class="brand">CITY&nbsp;STACK</span></div>
-  <div class="subtitle">NINE CITY ICONS &middot; SEVEN CITIES &mdash; MASTER BUILDER</div>
+  <div class="subtitle">ELEVEN CITY ICONS &middot; NINE CITIES &mdash; MASTER BUILDER</div>
   <div class="resline" id="completeStats">TOTAL PERFECT PLACEMENTS&nbsp;<b>0</b></div>
   <div class="tap-hint">TAP TO PLAY AGAIN</div>
 </div>
@@ -560,6 +560,37 @@ function petronasPlate(t){
     pts.push([Math.cos(th)*r, Math.sin(th)*r]); }
   return dedupe(ensureCCW(pts));
 }
+/* CHRIST THE REDEEMER — stepped pedestal into a tapering robe/torso, a single banded
+   floor-range where the arms swing out wide (tapering in from the band's own edges, since
+   real shoulders-to-fingertips isn't a flat slab), then a narrow neck up to the head. */
+function redeemerPlate(t){
+  let s;
+  if(t<0.14) s = 0.70 - 0.08*(t/0.14);
+  else if(t<0.62) s = 0.62 - 0.42*((t-0.14)/0.48);
+  else if(t<0.86) s = 0.20 - 0.07*((t-0.62)/0.24);
+  else s = 0.13;
+  const R=R0*s;
+  if(t<0.50 || t>=0.62) return nGon(4, R, Math.PI/4);
+  const armK = Math.max(0, 1-Math.abs((t-0.56)/0.06));
+  const armLen=R0*0.46*armK, armW=R0*0.075;
+  return ensureCCW([
+    [-R,-R],[R,-R],[R,-armW],[R+armLen,-armW],[R+armLen,armW],[R,armW],
+    [R,R],[-R,R],[-R,armW],[-R-armLen,armW],[-R-armLen,-armW],[-R,-armW],
+  ]);
+}
+/* TOKYO TOWER — lattice broadcast tower: wide splayed legs, a Main Deck plateau, a Special
+   Observatory plateau, then a long thin mast up to the antenna. */
+function tokyoTowerPlate(t){
+  let prof;
+  if(t<0.16){ const k=t/0.16; prof = 0.72 - 0.30*Math.pow(k,1.2); }
+  else if(t<0.32){ const k=(t-0.16)/0.16; prof = 0.42 - 0.14*k; }
+  else if(t<0.50){ const k=(t-0.32)/0.18; prof = 0.28 - 0.10*k; }
+  else { const k=(t-0.50)/0.50; prof = 0.18*Math.pow(Math.max(0,1-k),1.5) + 0.028; }
+  const deck1 = Math.exp(-Math.pow((t-0.16)/0.018,2)) * 0.045;
+  const deck2 = Math.exp(-Math.pow((t-0.32)/0.015,2)) * 0.032;
+  const R = R0*Math.max(prof+deck1+deck2, 0.045);
+  return nGon(4, R, Math.PI/4);
+}
 /* TUTORIAL — plain, wide, forgiving square used only to teach the core tap-to-drop feel */
 function tutorialPlate(t){
   const R = R0*(0.74 - 0.10*t);
@@ -574,12 +605,18 @@ const LEVELS=[
   { name:'HOW TO PLAY', city:'TUTORIAL', metresTxt:'LEARN THE BASICS', floors:10, bg:'tutorial',
     crown:'none', floorH:16, plate:tutorialPlate, isTutorial:true,
     pal:{h0:204,h1:204, s0:12,s1:12, l0:64,l1:80} },
+  { name:'CHRIST THE REDEEMER', city:'RIO DE JANEIRO', metresTxt:'38 M', floors:22, bg:'riodejaneiro',
+    crown:'none', floorH:16, plate:redeemerPlate,
+    pal:{h0:35,h1:38, s0:10,s1:6, l0:68,l1:86} },
   { name:'BIG BEN', city:'LONDON', metresTxt:'96 M', floors:30, bg:'londonday',
     crown:'gothic', floorH:15, plate:bigBenPlate,
     pal:{h0:40,h1:44, s0:24,s1:16, l0:60,l1:80} },
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
     crown:'shard', floorH:16, plate:shardPlate,
     pal:{h0:200,h1:207, s0:38,s1:22, l0:58,l1:86} },
+  { name:'TOKYO TOWER', city:'TOKYO', metresTxt:'332.9 M', floors:40, bg:'tokyo',
+    crown:'mast', floorH:15, plate:tokyoTowerPlate,
+    pal:{h0:14,h1:20, s0:55,s1:25, l0:54,l1:82} },
   { name:'MILAD TOWER', city:'TEHRAN', metresTxt:'435 M', floors:48, bg:'tehran',
     crown:'mast', floorH:16, plate:miladPlate,
     pal:{h0:210,h1:208, s0:8,s1:5, l0:74,l1:90} },
@@ -938,6 +975,18 @@ function malaysiaFlag(c,x,y,w,h){
   c.beginPath(); c.arc(x+w*0.27,y+h*0.26,h*0.12,0,7); c.fill(); c.restore();
   c.fillStyle='#ffcc00'; star5(c,x+w*0.33,y+h*0.30,h*0.09,0.2);
 }
+function brazilFlag(c,x,y,w,h){
+  c.fillStyle='#009c3b'; c.fillRect(x,y,w,h);
+  c.fillStyle='#ffdf00';
+  c.beginPath(); c.moveTo(x+w/2,y+h*0.08); c.lineTo(x+w*0.92,y+h/2); c.lineTo(x+w/2,y+h*0.92); c.lineTo(x+w*0.08,y+h/2); c.closePath(); c.fill();
+  c.fillStyle='#002776';
+  c.beginPath(); c.arc(x+w/2,y+h/2,h*0.24,0,7); c.fill();
+}
+function japanFlag(c,x,y,w,h){
+  c.fillStyle='#fff'; c.fillRect(x,y,w,h);
+  c.fillStyle='#bc002d';
+  c.beginPath(); c.arc(x+w/2,y+h/2,h*0.3,0,7); c.fill();
+}
 function pole(c,flagFn,x,groundY,poleH,fw){
   c.strokeStyle='rgba(50,58,74,.9)'; c.lineWidth=2;
   c.beginPath(); c.moveTo(x,groundY); c.lineTo(x,groundY-poleH); c.stroke();
@@ -946,7 +995,7 @@ function pole(c,flagFn,x,groundY,poleH,fw){
 
 /* ==================== SCENES ==================== */
 const scenes={};
-function buildAllScenes(){ ['tutorial','londonday','londonnight','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur'].forEach(k=>scenes[k]=buildScene(k)); }
+function buildAllScenes(){ ['tutorial','riodejaneiro','londonday','londonnight','tokyo','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur'].forEach(k=>scenes[k]=buildScene(k)); }
 function newSceneCanvas(){ const cv=document.createElement('canvas'); cv.width=W*DPR; cv.height=H*DPR;
   const c=cv.getContext('2d'); c.setTransform(DPR,0,0,DPR,0,0); return {cv,c}; }
 function clouds(c,horizon,alpha){
@@ -1484,6 +1533,88 @@ function buildScene(key){
     pole(c,malaysiaFlag,W*.34,horizon+6,36*u,22*u);
     pole(c,malaysiaFlag,W*.56,horizon+6,42*u,25*u);
     pole(c,malaysiaFlag,W*.9,horizon+6,38*u,23*u);
+  }
+
+  else if(key==='riodejaneiro'){
+    const sky=c.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#4fa8d8'); sky.addColorStop(.55,'#8fcbe0'); sky.addColorStop(1,'#f5dfa8');
+    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
+    c.fillStyle='rgba(255,250,225,.92)'; c.beginPath(); c.arc(W*.78,horizon*.16,26,0,7); c.fill();
+    clouds(c,horizon,.55);
+    // Sugarloaf Mountain (Pao de Acucar) — twin granite domes, left
+    c.fillStyle='rgba(70,110,90,.55)';
+    const sgx=W*.14;
+    c.beginPath(); c.ellipse(sgx,horizon-58*u,46*u,58*u,0,Math.PI,0); c.fill();
+    c.beginPath(); c.ellipse(sgx+50*u,horizon-40*u,32*u,40*u,0,Math.PI,0); c.fill();
+    // Tijuca forested hills (no statue here — that's this level's own landmark)
+    c.fillStyle='rgba(60,110,70,.5)';
+    c.beginPath(); c.moveTo(W*.55,horizon);
+    const hk=[[.55,.06],[.64,.30],[.73,.14],[.82,.34],[.92,.12],[1,.28]];
+    hk.forEach(p=>c.lineTo(p[0]*W,horizon-p[1]*H*0.4)); c.lineTo(W,horizon); c.closePath(); c.fill();
+    // favela hillside — small colourful stacked houses
+    const favCols=['#d8663f','#d8b23f','#7fb3d8','#c96a8f','#8fbf7a'];
+    for(let i=0;i<40;i++){ const fx=W*.58+Math.random()*W*.32, fy=horizon-Math.random()*90*u,
+      fw=9*u+Math.random()*7*u, fh=7*u+Math.random()*7*u;
+      c.fillStyle=favCols[i%favCols.length]; c.fillRect(fx,fy-fh,fw,fh); }
+    // Copacabana promenade — the famous wave-pattern mosaic
+    c.fillStyle='#e8dcb0'; c.fillRect(0,horizon,W,20*u);
+    c.strokeStyle='rgba(60,70,80,.4)'; c.lineWidth=5*u;
+    c.beginPath(); for(let x=0;x<=W;x+=22*u) c.lineTo(x, horizon+10*u+Math.sin(x*0.045)*6*u); c.stroke();
+    // beach sand into ocean
+    const grd=c.createLinearGradient(0,horizon+20*u,0,H);
+    grd.addColorStop(0,'#e0d2a0'); grd.addColorStop(.25,'#3f8fae'); grd.addColorStop(1,'#235f7a');
+    c.fillStyle=grd; c.fillRect(0,horizon+20*u,W,H-horizon-20*u);
+    c.fillStyle='rgba(255,255,255,.3)';
+    for(let i=0;i<36;i++) c.fillRect(Math.random()*W,horizon+40*u+Math.random()*(H-horizon-42*u),16+Math.random()*22,1.6);
+    palm(c,W*.08,horizon+18*u,u*1.1); palm(c,W*.40,horizon+18*u,u); palm(c,W*.92,horizon+18*u,u*1.05);
+    pole(c,brazilFlag,W*.22,horizon+18*u,38*u,24*u);
+    pole(c,brazilFlag,W*.64,horizon+18*u,42*u,26*u);
+    pole(c,brazilFlag,W*.80,horizon+18*u,36*u,22*u);
+  }
+
+  else if(key==='tokyo'){
+    const sky=c.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#3a4f86'); sky.addColorStop(.55,'#7a86ad'); sky.addColorStop(1,'#e8c9a0');
+    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
+    c.fillStyle='rgba(255,240,215,.7)'; c.beginPath(); c.arc(W*.76,horizon*.20,24,0,7); c.fill();
+    clouds(c,horizon,.4);
+    // Mount Fuji, far distance
+    c.fillStyle='rgba(90,100,130,.5)';
+    const fx=W*.22, ffh=110*u;
+    c.beginPath(); c.moveTo(fx-90*u,horizon); c.lineTo(fx-14*u,horizon-ffh); c.lineTo(fx-6*u,horizon-ffh*0.86);
+    c.lineTo(fx+6*u,horizon-ffh*0.86); c.lineTo(fx+14*u,horizon-ffh); c.lineTo(fx+90*u,horizon); c.closePath(); c.fill();
+    c.fillStyle='rgba(255,255,255,.8)';
+    c.beginPath(); c.moveTo(fx-14*u,horizon-ffh); c.lineTo(fx,horizon-ffh+14*u); c.lineTo(fx-6*u,horizon-ffh*0.86); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(fx+14*u,horizon-ffh); c.lineTo(fx,horizon-ffh+14*u); c.lineTo(fx+6*u,horizon-ffh*0.86); c.closePath(); c.fill();
+    // dense skyline with lit windows
+    let x=0; while(x<W){ const w=20+Math.random()*28,h=44+Math.random()*110;
+      c.fillStyle='rgba(60,66,90,.6)'; c.fillRect(x,horizon-h,w,h);
+      c.fillStyle='rgba(255,214,140,.35)';
+      for(let wy=horizon-h+6;wy<horizon-4;wy+=9*u) for(let wx=x+3;wx<x+w-3;wx+=8*u) if(Math.random()<0.5) c.fillRect(wx,wy,3,3);
+      x+=w+5; }
+    // Tokyo Skytree — a different tower, thin lattice with two observation bulges (background hint)
+    const stx=W*.70, sth=210*u;
+    c.strokeStyle='rgba(200,210,230,.55)'; c.lineWidth=3*u;
+    c.beginPath(); c.moveTo(stx-18*u,horizon); c.lineTo(stx,horizon-sth); c.moveTo(stx+18*u,horizon); c.lineTo(stx,horizon-sth); c.stroke();
+    c.fillStyle='rgba(200,210,230,.6)';
+    c.beginPath(); c.ellipse(stx,horizon-sth*0.62,9*u,6*u,0,0,7); c.fill();
+    c.beginPath(); c.ellipse(stx,horizon-sth*0.84,6*u,4*u,0,0,7); c.fill();
+    c.strokeStyle='rgba(200,210,230,.5)'; c.lineWidth=1.5*u;
+    c.beginPath(); c.moveTo(stx,horizon-sth); c.lineTo(stx,horizon-sth-16*u); c.stroke();
+    // ground + cherry blossoms
+    const grd=c.createLinearGradient(0,horizon,0,H);
+    grd.addColorStop(0,'#c9c2c0'); grd.addColorStop(1,'#a8a0a2');
+    c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
+    function sakura(tx,th){
+      c.strokeStyle='#5a4636'; c.lineWidth=3*u; c.beginPath(); c.moveTo(tx,horizon+8); c.lineTo(tx,horizon-th*0.5); c.stroke();
+      c.fillStyle='rgba(245,190,205,.85)';
+      for(const p of [[-1,-.9],[0,-1.15],[1,-.9],[-.5,-.55],[.5,-.55]])
+        { c.beginPath(); c.arc(tx+p[0]*th*0.3,horizon-th*0.5+p[1]*th*0.28,th*0.22,0,7); c.fill(); }
+    }
+    sakura(W*.08,54*u); sakura(W*.30,44*u); sakura(W*.95,50*u);
+    pole(c,japanFlag,W*.16,horizon+6,38*u,24*u);
+    pole(c,japanFlag,W*.50,horizon+6,42*u,26*u);
+    pole(c,japanFlag,W*.86,horizon+6,36*u,22*u);
   }
   return cv;
 }
@@ -2070,9 +2201,9 @@ const FREE_UI={
   // same cached canvases the levels themselves draw from (see `scenes` / buildAllScenes),
   // keyed to match those scene names so frame() can pick them straight out of that cache.
   bg:[['Day','day'],['Dusk','dusk'],['Night','night'],['Snow','snow'],
-      ['London Day','londonday'],['London Night','londonnight'],['Dubai','dubai'],
-      ['New York','nycplain'],['New York · WTC','nycwtc'],['Tehran','tehran'],
-      ['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
+      ['Rio de Janeiro','riodejaneiro'],['London Day','londonday'],['London Night','londonnight'],
+      ['Tokyo','tokyo'],['Dubai','dubai'],['New York','nycplain'],['New York · WTC','nycwtc'],
+      ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
 };
 function buildFreeOpts(){
