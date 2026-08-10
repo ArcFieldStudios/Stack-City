@@ -152,14 +152,24 @@
   #adSkip:disabled { opacity:.4; cursor:default; }
   .back { margin-top:16px; font-size:11px; letter-spacing:4px; color:rgba(255,255,255,.55); cursor:pointer; }
 
-  .optgroup { text-align:left; margin:12px 2px; }
-  .optgroup .lab { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:7px; }
-  .optrow { display:flex; flex-wrap:wrap; gap:6px; }
+  #freePreview { position:relative; width:100%; aspect-ratio:16/7; border-radius:14px; overflow:hidden;
+    margin:2px 0 18px; border:1px solid rgba(255,255,255,.18); background:#1c2a44;
+    box-shadow:0 6px 18px rgba(0,0,0,.3); }
+  #freePreviewCv { width:100%; height:100%; display:block; }
+  #freePreviewLabel { position:absolute; left:10px; bottom:8px; font-size:10px; letter-spacing:2.5px;
+    font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.6); pointer-events:none; }
+  .optgroup { text-align:left; margin:16px 2px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); }
+  .optgroup:first-child { margin-top:0; padding-top:0; border-top:none; }
+  .optgroup .lab { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:9px; font-weight:600; }
+  .optrow { display:flex; flex-wrap:wrap; gap:7px; }
   .chip { padding:8px 11px; border-radius:9px; font-size:11px; letter-spacing:1px; cursor:pointer;
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#fff; font-family:inherit; }
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#fff; font-family:inherit;
+    display:inline-flex; align-items:center; gap:6px; }
   .chip.sel { background:#ffe08a; color:#1b2338; border-color:#ffe08a; font-weight:700; }
   .chip.rainbow { background:linear-gradient(90deg,#f77,#fd6,#7e7,#6cf,#c8f); color:#1b2338; font-weight:700; }
   .chip.rainbow.sel { box-shadow:0 0 0 2px #fff inset; }
+  .chip .swatch { width:11px; height:11px; border-radius:50%; display:inline-block; flex:none;
+    border:1px solid rgba(0,0,0,.25); }
 
   #perfectFlash { position:fixed; left:50%; top:28%; transform:translate(-50%,-50%);
     font-size:24px; font-weight:700; letter-spacing:6px; color:#fff; opacity:0;
@@ -224,6 +234,9 @@
   #matchGrade { margin-top:5px; font-size:11px; letter-spacing:4px; font-weight:700; color:#ffe08a; }
   .ready-msg { margin-top:22px; font-size:16px; font-weight:500; letter-spacing:1.4px; line-height:1.8;
     color:rgba(255,255,255,.95); text-shadow:0 2px 10px rgba(0,0,0,.4); max-width:82vw; }
+  .hearts-explainer { margin-top:16px; font-size:11px; font-weight:400; letter-spacing:.5px; line-height:1.6;
+    color:rgba(255,255,255,.7); max-width:280px; margin-left:auto; margin-right:auto; }
+  .hearts-explainer .h { color:#ff6a80; margin-right:4px; }
 
   /* ---- Phone tightening: smaller HUD/titles/hologram footprint, less wasted chrome ---- */
   @media (max-width:480px), (max-height:700px) {
@@ -248,6 +261,7 @@
     #matchScore { font-size:28px; margin-top:6px; }
     #matchLabel { font-size:9px; }
     .ready-msg { font-size:13px; letter-spacing:1px; margin-top:16px; }
+    .hearts-explainer { font-size:10px; margin-top:12px; max-width:240px; }
     .resline { font-size:10px; letter-spacing:2.5px; margin-top:10px; }
   }
 </style>
@@ -311,6 +325,7 @@
   <div class="panel" id="pauseFree" style="display:none">
     <h2>FREE PLAY</h2>
     <h1>YOUR RULES</h1>
+    <div id="freePreview"><canvas id="freePreviewCv"></canvas><div id="freePreviewLabel"></div></div>
     <div id="freeOptsBody"></div>
     <button class="btn primary" id="btnFreeStart">START BUILDING</button>
     <div class="back" id="btnFreeBack">&#8592; BACK</div>
@@ -356,7 +371,9 @@
   <div id="matchScore">0%</div>
   <div id="matchLabel">ACCURACY</div>
   <div id="matchGrade">&mdash;</div>
-  <div class="ready-msg" id="readyMsg" style="display:none">NOW YOU'RE READY TO MOVE ON<br>TO THE BIG CITIES &mdash; READY?</div>
+  <div class="ready-msg" id="readyMsg" style="display:none">NOW YOU'RE READY TO MOVE ON<br>TO THE BIG CITIES &mdash; READY?
+    <div class="hearts-explainer"><span class="h">&hearts;</span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
+  </div>
   <div class="res-btn-hint" id="resHint">TAP TO CONTINUE</div>
   <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h">♥</span>USE HEART</button>
   <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h">♥</span>GET HEARTS</button>
@@ -628,9 +645,10 @@ function loadProgress(){
       ageBand: p.ageBand||'',
       muted: !!p.muted,
       levelBest: (p.levelBest && typeof p.levelBest==='object') ? p.levelBest : {},
-      freeConfig: (p.freeConfig && typeof p.freeConfig==='object') ? p.freeConfig : null }; }
+      freeConfig: (p.freeConfig && typeof p.freeConfig==='object') ? p.freeConfig : null,
+      lastMode: p.lastMode==='free' ? 'free' : 'level' }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'', muted:false, levelBest:{}, freeConfig:null };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'', muted:false, levelBest:{}, freeConfig:null, lastMode:'level' };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
@@ -651,7 +669,7 @@ function setLastLevel(i){
   // once it's ever been beaten, nothing (including manually replaying it from the level
   // list) is allowed to make it the "last level" the app reopens into again.
   if(i===0 && (progress.highestUnlocked>=1 || progress.unlockedAll)) return;
-  if(progress.lastLevel!==i){ progress.lastLevel=i; saveProgress(); }
+  if(progress.lastLevel!==i || progress.lastMode!=='level'){ progress.lastLevel=i; progress.lastMode='level'; saveProgress(); }
 }
 /* Age-gate: minimal age-band self-declaration, no birthdate collected. Downstream
    integrations (PostHog, AdMob) read isUnder13()/isMinor() to decide how much they
@@ -2105,6 +2123,12 @@ function finish(won){
 }
 function finishFree(){
   state='result'; mover=null;
+  // Hearts/ads only ever apply to continuing a real level mid-tower — finish() toggles
+  // these based on that context, but never runs during Free Play, so without this they'd
+  // keep showing whatever finish() last left them as, from an unrelated real-level attempt.
+  S('btnUseHearts').classList.remove('show');
+  S('btnGetHearts').classList.remove('show');
+  S('btnWatchAd').classList.remove('show');
   S('compareWrap').style.display='none';
   S('resFloors').style.display='none';
   S('matchGrade').style.display='none';
@@ -2151,7 +2175,12 @@ function buildLevelList(){
   free.innerHTML='<span>FREE PLAY<small>ENDLESS \u00b7 PICK SHAPE, COLOUR &amp; SKY</small></span><span class="n">\u2605</span>';
   free.onclick=e=>{ e.stopPropagation(); sndClick(); buildFreeOpts(); showPanel('free'); };
   el.appendChild(free);
+  const tutorialDone = progress.highestUnlocked>=1 || progress.unlockedAll;
   LEVELS.forEach((lv,i)=>{
+    // The tutorial is one-time onboarding, not a real city — once it's been beaten, it's
+    // gone from this list for good rather than sitting there as a permanently-replayable
+    // level. It only ever appears again on a genuinely fresh install.
+    if(i===0 && tutorialDone) return;
     const b=document.createElement('button'); b.className='btn lvl-btn';
     const unlocked = isLevelUnlocked(i);
     const lockIcon = unlocked ? '' : '<span class="lock">\ud83d\udd12</span>';
@@ -2168,8 +2197,9 @@ function buildLevelList(){
   });
 }
 const FREE_UI={
-  shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
-  speed:['Slow','Medium','Fast','Random'],
+  // Background first — it's the one option with a live preview, so it leads; the rest follow
+  // in the order you'd naturally decide them (what it looks like, then shape, then colour,
+  // then how fast).
   // Plain [label,key] pairs for the generic skies; the real city scenes reuse the exact
   // same cached canvases the levels themselves draw from (see `scenes` / buildAllScenes),
   // keyed to match those scene names so frame() can pick them straight out of that cache.
@@ -2177,8 +2207,50 @@ const FREE_UI={
       ['Rio de Janeiro','riodejaneiro'],['London Day','londonday'],['London Night','londonnight'],
       ['Tokyo','tokyo'],['Dubai','dubai'],['New York','nycplain'],['New York · WTC','nycwtc'],
       ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
+  shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
+  speed:['Slow','Medium','Fast','Random'],
 };
+function renderFreePreview(){
+  const cv=S('freePreviewCv'); if(!cv) return;
+  const rect=cv.getBoundingClientRect(), w=Math.max(rect.width,10), h=Math.max(rect.height,10);
+  const dpr=Math.min(window.devicePixelRatio||1,2), pw=Math.round(w*dpr), ph=Math.round(h*dpr);
+  if(cv.width!==pw||cv.height!==ph){ cv.width=pw; cv.height=ph; }
+  const pc=cv.getContext('2d'); pc.setTransform(dpr,0,0,dpr,0,0); pc.clearRect(0,0,w,h);
+
+  const bg=freeConfig.bg, citySc=scenes[bg];
+  if(citySc){
+    pc.drawImage(citySc,0,0,citySc.width,citySc.height,0,0,w,h);
+  } else {
+    // the four generic skies aren't cached scene canvases — mirror drawFreeBg()'s own palette
+    const g=pc.createLinearGradient(0,0,0,h);
+    if(bg==='day'){ g.addColorStop(0,'#5aa0dc'); g.addColorStop(1,'#c7e2f2'); }
+    else if(bg==='dusk'){ g.addColorStop(0,'#3a3f74'); g.addColorStop(.5,'#c96a6a'); g.addColorStop(1,'#f0b06a'); }
+    else if(bg==='night'){ g.addColorStop(0,'#0b1436'); g.addColorStop(1,'#26325e'); }
+    else { g.addColorStop(0,'#c9d8e4'); g.addColorStop(1,'#eef4f8'); }
+    pc.fillStyle=g; pc.fillRect(0,0,w,h);
+    if(bg==='night'){ pc.fillStyle='rgba(255,255,255,.8)';
+      for(let i=0;i<24;i++) pc.fillRect((i*41%w),(i*23%(h*0.7)),1.2,1.2); }
+    if(bg==='snow'){ pc.fillStyle='rgba(255,255,255,.9)';
+      for(let i=0;i<22;i++){ pc.beginPath(); pc.arc((i*33%w),(i*19%h),1.1,0,7); pc.fill(); } }
+  }
+
+  // a small flat swatch of the selected shape + colour, so the preview covers all three
+  // visual picks at once, not just the background
+  const cx=w*0.82, cy=h*0.80, sz=Math.min(w,h)*0.30;
+  const poly=(FREE_SHAPES[freeConfig.shape]||FREE_SHAPES.square)();
+  const cc = freeConfig.color==='rainbow' ? {h:20,s:70,l:60} : freeConfig.color==='random' ? {h:210,s:8,l:82} : (FREE_COLORS[freeConfig.color]||FREE_COLORS.blue);
+  pc.save(); pc.translate(cx,cy);
+  pc.beginPath();
+  poly.forEach((p,i)=>{ const px=p[0]/R0*sz, py=p[1]/R0*sz*0.55; i?pc.lineTo(px,py):pc.moveTo(px,py); });
+  pc.closePath();
+  pc.fillStyle='hsl('+cc.h+','+cc.s+'%,'+cc.l+'%)'; pc.fill();
+  pc.strokeStyle='rgba(0,0,0,.35)'; pc.lineWidth=1.4; pc.stroke();
+  pc.restore();
+
+  const found=FREE_UI.bg.find(e=>e[1]===bg);
+  S('freePreviewLabel').textContent = found ? found[0].toUpperCase() : bg.toUpperCase();
+}
 function buildFreeOpts(){
   const body=S('freeOptsBody'); body.innerHTML='';
   Object.keys(FREE_UI).forEach(group=>{
@@ -2191,15 +2263,23 @@ function buildFreeOpts(){
       const [label,key] = Array.isArray(entry) ? entry : [entry, entry.toLowerCase()];
       const chip=document.createElement('button'); chip.className='chip';
       if(key==='rainbow') chip.className+=' rainbow';
-      chip.textContent=label;
+      if(group==='color' && key!=='rainbow'){
+        const sw=document.createElement('span'); sw.className='swatch';
+        const cc = key==='random' ? {h:210,s:8,l:82} : (FREE_COLORS[key]||FREE_COLORS.blue);
+        sw.style.background='hsl('+cc.h+','+cc.s+'%,'+cc.l+'%)';
+        chip.appendChild(sw);
+      }
+      chip.appendChild(document.createTextNode(label));
       if(freeConfig[group]===key) chip.classList.add('sel');
       chip.onclick=e=>{ e.stopPropagation(); sndClick(); freeConfig[group]=key;
         progress.freeConfig=freeConfig; saveProgress();
-        [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel'); };
+        [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel');
+        renderFreePreview(); };
       row.appendChild(chip);
     });
     wrap.appendChild(row); body.appendChild(wrap);
   });
+  renderFreePreview();
 }
 S('menuBtn').onclick=e=>{ e.stopPropagation();
   if(state==='playing') openPause();
@@ -2265,10 +2345,14 @@ S('btnUseHearts').onclick=e=>{ e.stopPropagation();
 S('btnLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=false; buildLevelList(); showPanel('levels'); };
 S('btnBack').onclick=e=>{ e.stopPropagation(); sndClick(); if(levelsFromMenu) closePanel(); else showPanel('main'); };
 S('btnFreeBack').onclick=e=>{ e.stopPropagation(); sndClick(); showPanel('levels'); };
-S('btnFreeStart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel();
-  isFree=true; curLevel=0; ['introScreen','menuScreen','resultScreen'].forEach(s=>S(s).classList.remove('visible'));
+function startFreePlay(){
+  isFree=true; curLevel=0;
+  progress.lastMode='free'; saveProgress();
+  ['introScreen','menuScreen','resultScreen'].forEach(s=>S(s).classList.remove('visible'));
   levelTagEl.textContent='FREE PLAY \u00b7 '+freeConfig.shape.toUpperCase();
-  state='playing'; showHUD(); reset(); };
+  state='playing'; showHUD(); reset();
+}
+S('btnFreeStart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); startFreePlay(); };
 
 /* ==================== FLOW ==================== */
 function showMenu(){
@@ -2320,8 +2404,12 @@ function tap(e){
   // dropping a floor needs to work across the whole screen.
   if(state!=='playing' && e && typeof e.clientY==='number' && e.clientY < H*0.5) return;
   const now=performance.now(); if(now-lockTap<160) return; lockTap=now; audio();
-  if(state==='menu'){ S('menuScreen').classList.remove('visible'); isFree=false; totalPerfects=0;
-    transitioning=true; setTimeout(()=>{ transitioning=false; showIntro(); },520); }
+  if(state==='menu'){ S('menuScreen').classList.remove('visible'); totalPerfects=0;
+    transitioning=true;
+    setTimeout(()=>{ transitioning=false;
+      if(progress.lastMode==='free'){ startFreePlay(); }
+      else { isFree=false; showIntro(); }
+    },520); }
   else if(state==='intro'){ startPlaying(); }
   else if(state==='playing'){ place(); }
   else if(state==='result'){
