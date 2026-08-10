@@ -56,13 +56,6 @@
     font-family:inherit; }
   .res-btn-hint { margin-top:22px; animation:pulse 1.7s ease-in-out infinite; }
   .res-menu-btn { pointer-events:auto; margin-top:10px; cursor:pointer; }
-  #btnUseHearts { pointer-events:auto; margin-top:10px; cursor:pointer;
-    background:rgba(255,80,110,.25); border-color:rgba(255,120,140,.6); display:none; }
-  #btnUseHearts.show { display:inline-block; }
-  #btnUseHearts.disabled { pointer-events:none; cursor:default; opacity:.55;
-    background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.22); color:rgba(255,255,255,.55); }
-  #btnUseHearts.disabled .h { color:rgba(255,255,255,.4); }
-  #btnUseHearts .h { color:#ff6a80; margin-right:6px; }
 
   #heartBadge { position:fixed; top:calc(20px + env(safe-area-inset-top)); right:18px;
     z-index:30; display:none; align-items:center; gap:5px; padding:7px 13px;
@@ -127,6 +120,23 @@
   .shop-btn.ad { background:rgba(90,180,255,.18); border-color:rgba(120,200,255,.5); }
   .shop-btn.ad .price { color:#8fd0ff; }
   #shopClose { margin-top:16px; background:none; border:none; color:rgba(255,255,255,.5);
+    font-size:11px; letter-spacing:3px; cursor:pointer; font-family:inherit; padding:6px; }
+
+  #heartOverlay { position:fixed; inset:0; z-index:90; background:rgba(4,10,22,.85);
+    backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; padding:20px; }
+  #heartOverlay.show { display:flex; }
+  #heartPanel { background:rgba(20,28,50,.95); border:1px solid rgba(255,255,255,.18);
+    border-radius:20px; padding:26px 24px; max-width:340px; width:100%; text-align:center; color:#fff; }
+  #heartPanel h2 { font-size:11px; letter-spacing:5px; opacity:.6; font-weight:600; margin-bottom:20px; }
+  .heart-row { display:flex; align-items:center; justify-content:center; gap:18px; }
+  .heart-big-icon { font-size:68px; line-height:1; color:#ff5a70; flex:none;
+    text-shadow:0 0 24px rgba(255,90,112,.55); filter:drop-shadow(0 4px 10px rgba(255,90,112,.35)); }
+  .heart-use-btn { width:104px; height:104px; flex:none; border-radius:18px; background:#ffe08a;
+    color:#1b2338; border:none; font-size:13px; font-weight:800; letter-spacing:1.5px; line-height:1.4;
+    cursor:pointer; font-family:inherit; }
+  .heart-use-btn:active { transform:scale(.96); }
+  .heart-explain { margin-top:20px; font-size:12px; line-height:1.6; color:rgba(255,255,255,.7); }
+  #heartDecline { margin-top:16px; background:none; border:none; color:rgba(255,255,255,.5);
     font-size:11px; letter-spacing:3px; cursor:pointer; font-family:inherit; padding:6px; }
 
   #toastMsg { position:fixed; top:calc(80px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
@@ -288,6 +298,17 @@
     <button id="shopClose">CANCEL</button>
   </div>
 </div>
+<div id="heartOverlay" class="no-tap">
+  <div id="heartPanel">
+    <h2>KEEP BUILDING?</h2>
+    <div class="heart-row">
+      <div class="heart-big-icon">♥</div>
+      <button id="btnHeartContinue" class="heart-use-btn">USE<br>HEART</button>
+    </div>
+    <p class="heart-explain">A heart gives you an extra life — keep building right where you left off.</p>
+    <button id="heartDecline">NO THANKS</button>
+  </div>
+</div>
 
 <div class="ui" style="padding-top:env(safe-area-inset-top)">
   <div id="levelTag"></div>
@@ -375,7 +396,6 @@
     <div class="hearts-explainer"><span class="h">&hearts;</span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
   </div>
   <div class="res-btn-hint" id="resHint">TAP TO CONTINUE</div>
-  <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h">♥</span>USE HEART</button>
   <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h">♥</span>GET HEARTS</button>
   <button class="no-tap res-menu-btn" id="btnWatchAd">WATCH AD +♥</button>
   <button class="no-tap res-menu-btn" id="btnResMainMenu">MAIN MENU</button>
@@ -652,6 +672,7 @@ function loadProgress(){
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
+progress.unlockedAll = true; // TEMP: unlocked for testing — flip back to false before real release
 if(progress.freeConfig){
   // Only restore keys that are still valid — a stale save (e.g. a background from a
   // level that's since been removed) falls back to freeConfig's own defaults instead
@@ -803,45 +824,31 @@ function updateMuteButtons(){
 function toggleMute(){ progress.muted=!progress.muted; saveProgress(); updateMuteButtons(); if(!progress.muted) sndClick(); }
 
 /* ==================== AMBIENT MUSIC ====================
-   A quiet generative drone plus a periodic pulse, built the same way as the rest of this
-   file's sound effects — oscillators, no audio assets. Rather than starting/stopping it at
-   every individual place gameplay can begin or end (pause, hearts-continue, free play,
-   tutorial, retries…), it's driven once a frame from frame(): it just reads how close the
-   current tower is to its top floor and fades toward silence whenever state isn't 'playing',
-   so there's no call site that can forget to silence it. */
-let ambient=null;
-function ensureAmbient(){
-  if(ambient) return ambient;
-  const ac=audio();
-  const master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
-  const filt=ac.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=650; filt.connect(master);
-  const o1=ac.createOscillator(), o2=ac.createOscillator();
-  o1.type='sine'; o2.type='sine';
-  const g1=ac.createGain(), g2=ac.createGain(); g1.gain.value=.5; g2.gain.value=.32;
-  o1.connect(g1); g1.connect(filt); o2.connect(g2); g2.connect(filt);
-  o1.start(); o2.start();
-  ambient={ ac, master, filt, o1, o2 };
-  return ambient;
-}
-let ambientNextPulse=0;
+   A soft, bright chime pattern — no continuous drone — built from the same oscillator-based
+   tone() used for every other sound effect here. It steps up through a major pentatonic
+   scale (the most consonant, least "intimidating" scale there is) in a gentle loop: slow
+   and relaxed near the bottom of the tower, speeding up — and drifting a little higher in
+   pitch — the closer you get to the top, so climbing has a musical payoff instead of a
+   looming hum underneath it. Driven once a frame from frame(): it just reads how close the
+   tower is to its top floor and goes quiet whenever state isn't 'playing', so there's no
+   call site that can forget to silence it. */
+const AMBIENT_SCALE=[0,2,4,7,9,12,14,16,19];   // major pentatonic across a couple of octaves
+let ambientNoteIdx=0, ambientNextPulse=0;
 function ambientProgress(){
   if(isFree) return Math.min(1,(score%40)/40);   // free play is endless, so cycle the tension instead of maxing out forever
   return N>0 ? Math.min(1, score/N) : 0;
 }
 function updateAmbient(){
   const audible = state==='playing' && !paused && !progress.muted;
-  if(!ambient && !audible) return;   // never touch WebAudio before it's actually needed
-  const amb=ensureAmbient(), now=amb.ac.currentTime, p=ambientProgress();
-  amb.master.gain.setTargetAtTime(audible ? .05+p*.10 : 0, now, .6);
-  amb.filt.frequency.setTargetAtTime(650+p*2200, now, .8);
-  const root=82.4*(1+p*0.55);                    // E2 drifting up toward ~E3 near the top
-  amb.o1.frequency.setTargetAtTime(root, now, 1.5);
-  amb.o2.frequency.setTargetAtTime(root*1.5, now, 1.5);   // a calm open fifth
   if(!audible){ ambientNextPulse=0; return; }
-  if(now>=ambientNextPulse){
-    tone(root*4*(0.98+Math.random()*0.04), .4, 'triangle', .045, root*3);
-    ambientNextPulse = now + Math.max(.35, 1.3-p*0.85);   // 1.3s apart at the base, ~0.45s near the top
-  }
+  const now=audio().currentTime;
+  if(now<ambientNextPulse) return;
+  const p=ambientProgress();
+  const root=523.25*Math.pow(2,p*0.42);        // C5 drifting up toward ~D6 near the top
+  const semis=AMBIENT_SCALE[ambientNoteIdx%AMBIENT_SCALE.length];
+  tone(root*Math.pow(2,semis/12), .5, 'sine', .045+p*.045);
+  ambientNoteIdx++;
+  ambientNextPulse = now + Math.max(.22, 1.05-p*0.80);   // 1.05s apart near the bottom, ~0.22s near the top
 }
 
 /* ==================== HAPTICS ==================== */
@@ -994,12 +1001,15 @@ function drawLondon(c,horizon,u,opt){
     for(let i=0;i<80;i++) c.fillRect((i*97%W),(i*61%(horizon*0.7)),1.5,1.5);
     c.fillStyle='rgba(255,250,235,.95)'; c.beginPath(); c.arc(W*.84,horizon*.2,22,0,7); c.fill();
   } else {
-    const sunX=W*.22, sunY=horizon*.17, sunR=30*u;
-    const glow=c.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*2.6);
-    glow.addColorStop(0,'rgba(255,248,214,.85)'); glow.addColorStop(1,'rgba(255,248,214,0)');
-    c.fillStyle=glow; c.beginPath(); c.arc(sunX,sunY,sunR*2.6,0,7); c.fill();
-    c.fillStyle='#fff8dc'; c.beginPath(); c.arc(sunX,sunY,sunR,0,7); c.fill();
+    // Clouds first, sun drawn on top last — otherwise a cloud can randomly land right over
+    // it and bury it for the whole level. Bigger, brighter glow so it reads clearly even
+    // against the cloud layer instead of blending in.
     clouds(c,horizon);
+    const sunX=W*.22, sunY=horizon*.17, sunR=32*u;
+    const glow=c.createRadialGradient(sunX,sunY,0,sunX,sunY,sunR*3.4);
+    glow.addColorStop(0,'rgba(255,250,220,.95)'); glow.addColorStop(.5,'rgba(255,248,214,.4)'); glow.addColorStop(1,'rgba(255,248,214,0)');
+    c.fillStyle=glow; c.beginPath(); c.arc(sunX,sunY,sunR*3.4,0,7); c.fill();
+    c.fillStyle='#fffaea'; c.beginPath(); c.arc(sunX,sunY,sunR,0,7); c.fill();
   }
   c.fillStyle= night?'rgba(46,60,92,.6)':'rgba(120,140,170,.45)';
   let x=0; while(x<W){ const w=24+Math.random()*46,h=20+Math.random()*70; c.fillRect(x,horizon-h,w,h); x+=w+8+Math.random()*16; }
@@ -1043,13 +1053,6 @@ function drawLondon(c,horizon,u,opt){
   c.bezierCurveTo(wtx+wtw*0.60,horizon-wth*0.78, wtx+wtw*0.62,horizon-wth*0.35, wtx+wtw*0.30,horizon);
   c.closePath(); c.fill();
 
-  // Cheesegrater — a tall wedge tapering sharply up to one side
-  const cgx=W*.665, cgw=26*u, cgh=150*u; c.fillStyle=sil;
-  c.beginPath();
-  c.moveTo(cgx-cgw/2,horizon); c.lineTo(cgx-cgw/2,horizon-cgh*0.14);
-  c.lineTo(cgx+cgw/2,horizon-cgh); c.lineTo(cgx+cgw/2,horizon);
-  c.closePath(); c.fill();
-
   // The Shard (only when requested) — one continuous tapering glass silhouette, with a
   // slightly irregular multi-point peak (echoing the real building's uneven glass fins)
   // instead of a separate spire drawn from thin strokes
@@ -1088,11 +1091,22 @@ function drawLondon(c,horizon,u,opt){
   c.beginPath(); c.moveTo(tbx-3*u,horizon-tbh+10*u); c.lineTo(tbx-26*u,deckY); c.stroke();
   c.beginPath(); c.moveTo(tbx+gap+tbw+3*u,horizon-tbh+10*u); c.lineTo(tbx+gap+tbw+26*u,deckY); c.stroke();
 
-  // Gherkin — sized up a bit and nudged in from the edge to keep clearance at this larger size
+  // Gherkin — a proper bullet/torpedo profile: tapers in slightly right at street level,
+  // bulges out to its widest a little over a third of the way up, then a long smooth taper
+  // to a small blunt dome at the top. The previous curve did the opposite — full width at
+  // the base narrowing to a sharp point at the top — which reads as an upside-down pickle
+  // rather than the real building.
   const gx=W*.90,gh=140*u,gw=44*u; c.fillStyle=sil;
-  c.beginPath(); c.moveTo(gx-gw/2,horizon);
-  c.bezierCurveTo(gx-gw/2-7*u,horizon-gh*.55,gx-gw*.25,horizon-gh,gx,horizon-gh);
-  c.bezierCurveTo(gx+gw*.25,horizon-gh,gx+gw/2+7*u,horizon-gh*.55,gx+gw/2,horizon); c.closePath(); c.fill();
+  const gN=16, gPts=[];
+  for(let i=0;i<=gN;i++){
+    const t=i/gN;
+    const r = t<0.42 ? 0.78+0.22*Math.sin(t/0.42*Math.PI/2) : 0.12+0.88*Math.cos((t-0.42)/0.58*Math.PI/2);
+    gPts.push([t,r]);
+  }
+  c.beginPath();
+  gPts.forEach((p,i)=>{ const px=gx-p[1]*gw/2, py=horizon-p[0]*gh; i?c.lineTo(px,py):c.moveTo(px,py); });
+  for(let i=gPts.length-1;i>=0;i--){ const p=gPts[i]; c.lineTo(gx+p[1]*gw/2, horizon-p[0]*gh); }
+  c.closePath(); c.fill();
 
   pole(c,unionJack,W*.20,horizon,34*u,20*u); pole(c,unionJack,W*.40,horizon,30*u,18*u); pole(c,unionJack,W*.86,horizon,32*u,19*u);
 
@@ -2090,10 +2104,8 @@ function renderTower(cv,blocks,withCrown){
 function finish(won){
   state='result'; mover=null; totalPerfects+=perfects; tutorHide();
   showHearts();
-  const failedMid = !won && !isFree && stack.length>0 && stack.length<=N;
-  S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
-  S('btnUseHearts').innerHTML = '<span class="h">♥</span>USE HEART';
-  S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
+  const canContinue = !won && stack.length>0 && stack.length<=N;
+  S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
   S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
   if(won) sndWin();
   const isTutorialWin = curLevel===0 && won;
@@ -2113,22 +2125,22 @@ function finish(won){
   S('resHint').dataset.free='0';
   hideHUD(); S('menuBtn').classList.remove('show');
   const snap=stack.slice();
-  setTimeout(()=>{
+  const reveal=()=>{
     S('resultScreen').classList.add('visible');
     if(!isTutorialWin) requestAnimationFrame(()=>{
       renderTower(S('idealCv'), idealBlocks(), true);
       renderTower(S('yoursCv'), snap, snap.some(b=>b.isSpire));
     });
+  };
+  setTimeout(()=>{
+    if(canContinue && progress.hearts>0) showHeartOverlay(reveal); else reveal();
   }, won?1600:800);
 }
 function finishFree(){
   state='result'; mover=null;
-  // Hearts/ads only ever apply to continuing a real level mid-tower — finish() toggles
-  // these based on that context, but never runs during Free Play, so without this they'd
-  // keep showing whatever finish() last left them as, from an unrelated real-level attempt.
-  S('btnUseHearts').classList.remove('show');
-  S('btnGetHearts').classList.remove('show');
-  S('btnWatchAd').classList.remove('show');
+  const canContinue = stack.length>0;
+  S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
+  S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
   S('compareWrap').style.display='none';
   S('resFloors').style.display='none';
   S('matchGrade').style.display='none';
@@ -2142,7 +2154,10 @@ function finishFree(){
   S('resHint').textContent='TAP TO BUILD AGAIN';
   S('resHint').dataset.free='1';
   hideHUD(); S('menuBtn').classList.remove('show');
-  setTimeout(()=>S('resultScreen').classList.add('visible'),450);
+  const reveal=()=>S('resultScreen').classList.add('visible');
+  setTimeout(()=>{
+    if(canContinue && progress.hearts>0) showHeartOverlay(reveal); else reveal();
+  },450);
 }
 
 function updateHUD(){ scoreEl.textContent=score; progEl.textContent = isFree ? 'FREE PLAY' : (score+' / '+N); }
@@ -2292,25 +2307,29 @@ S('btnResMainMenu').onclick=e=>{ e.stopPropagation(); sndClick(); S('resultScree
   setTimeout(()=>showMenu(), 300); };
 function openShop(){ S('shopOverlay').classList.add('show'); }
 function closeShop(){ S('shopOverlay').classList.remove('show'); }
+// True once you've collapsed a tower with floors still standing — real level or Free Play —
+// and haven't yet either continued or moved on. Shared by every path that can grant a heart
+// after the fact (shop, watch-ad) to decide whether it's worth re-offering the continue popup.
+function canContinueNow(){
+  return state==='result' && stack.length>0 &&
+    (S('resHint').dataset.free==='1' || S('resHint').textContent==='TAP TO RETRY');
+}
 S('btnGetHearts').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
 S('shopClose').onclick=e=>{ e.stopPropagation(); sndClick(); closeShop(); };
 document.querySelectorAll('.shop-btn').forEach(btn=>{
   btn.onclick=e=>{ e.stopPropagation(); sndClick();
     closeShop(); playAdForHeart(()=>{
-      // refresh result-screen buttons if still on that screen
       if(state==='result'){
-        const failedMid = stack.length>0 && stack.length<=N && S('resHint').textContent==='TAP TO RETRY';
-        S('btnUseHearts').classList.toggle('show', failedMid && progress.hearts>0);
-        S('btnGetHearts').classList.toggle('show', failedMid && progress.hearts<=0);
+        S('btnGetHearts').classList.toggle('show', canContinueNow() && progress.hearts<=0);
         S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+        if(canContinueNow() && progress.hearts>0) showHeartOverlay();
       }
     });
   };
 });
 S('btnWatchAd').onclick=e=>{ e.stopPropagation(); sndClick();
   playAdForHeart(()=>{ S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
-    const canContinue = state==='result' && progress.hearts>0;
-    S('btnUseHearts').classList.toggle('show', canContinue && S('resHint').textContent==='TAP TO RETRY');
+    if(canContinueNow() && progress.hearts>0) showHeartOverlay();
   });
 };
 function buyNoAds(){
@@ -2329,10 +2348,22 @@ S('btnOptBack').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
 S('btnMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
 S('btnOptMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
 S('btnHeartPlus').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
-S('btnUseHearts').onclick=e=>{ e.stopPropagation();
+// The heart-continue popup: a big heart icon, a square USE HEART button beside it, and a
+// one-line explanation of what a heart actually does — shown instead of (in front of) the
+// normal result screen right when you collapse, for real levels and Free Play alike.
+// onDecline runs if you back out instead — normally that reveals the result screen, but when
+// this is re-offered later (after topping up hearts from an already-visible result screen)
+// there's nothing left to reveal, so onDecline is optional and just closes the popup.
+let heartDeclineAction=null;
+function showHeartOverlay(onDecline){
+  heartDeclineAction = onDecline || null;
+  S('heartOverlay').classList.add('show');
+}
+S('btnHeartContinue').onclick=e=>{ e.stopPropagation();
   if(progress.hearts<=0) return;
   sndClick(); consumeHeart();
-  S('btnUseHearts').classList.remove('show');
+  S('heartOverlay').classList.remove('show');
+  heartDeclineAction=null;
   S('resultScreen').classList.remove('visible');
   transitioning=true;
   setTimeout(()=>{
@@ -2341,6 +2372,11 @@ S('btnUseHearts').onclick=e=>{ e.stopPropagation();
     // spawn a fresh mover for the next floor and go back to playing.
     debris=[]; state='playing'; hideHearts(); showHUD(); spawnMover();
   }, 320);
+};
+S('heartDecline').onclick=e=>{ e.stopPropagation(); sndClick();
+  S('heartOverlay').classList.remove('show');
+  const fn=heartDeclineAction; heartDeclineAction=null;
+  if(fn) fn();
 };
 S('btnLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=false; buildLevelList(); showPanel('levels'); };
 S('btnBack').onclick=e=>{ e.stopPropagation(); sndClick(); if(levelsFromMenu) closePanel(); else showPanel('main'); };
