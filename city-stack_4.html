@@ -56,6 +56,10 @@
     font-family:inherit; }
   .res-btn-hint { margin-top:22px; animation:pulse 1.7s ease-in-out infinite; }
   .res-menu-btn { pointer-events:auto; margin-top:10px; cursor:pointer; }
+  #btnUseHearts { pointer-events:auto; margin-top:10px; cursor:pointer;
+    background:rgba(255,80,110,.25); border-color:rgba(255,120,140,.6); display:none; }
+  #btnUseHearts.show { display:inline-block; }
+  #btnUseHearts .h { color:#ff6a80; margin-right:6px; }
 
   #heartBadge { position:fixed; top:calc(20px + env(safe-area-inset-top)); right:18px;
     z-index:30; display:none; align-items:center; gap:5px; padding:7px 13px;
@@ -162,24 +166,24 @@
   #adSkip:disabled { opacity:.4; cursor:default; }
   .back { margin-top:16px; font-size:11px; letter-spacing:4px; color:rgba(255,255,255,.55); cursor:pointer; }
 
-  #freePreview { position:relative; width:100%; aspect-ratio:16/7; border-radius:14px; overflow:hidden;
-    margin:2px 0 18px; border:1px solid rgba(255,255,255,.18); background:#1c2a44;
-    box-shadow:0 6px 18px rgba(0,0,0,.3); }
-  #freePreviewCv { width:100%; height:100%; display:block; }
-  #freePreviewLabel { position:absolute; left:10px; bottom:8px; font-size:10px; letter-spacing:2.5px;
-    font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.6); pointer-events:none; }
-  .optgroup { text-align:left; margin:16px 2px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); }
-  .optgroup:first-child { margin-top:0; padding-top:0; border-top:none; }
-  .optgroup .lab { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:9px; font-weight:600; }
+  .carousel { text-align:left; margin:16px 2px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); }
+  .carousel:first-child { margin-top:0; padding-top:0; border-top:none; }
+  .carousel .lab { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:9px; font-weight:600; }
+  .carousel-row { display:flex; align-items:center; gap:10px; }
+  .carousel-arrow { flex:none; width:38px; height:38px; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); color:#fff;
+    font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center; font-family:inherit; }
+  .carousel-arrow:active { background:rgba(255,255,255,.2); transform:scale(.94); }
+  .carousel-preview { position:relative; flex:1; min-width:0; border-radius:14px; overflow:hidden;
+    border:1px solid rgba(255,255,255,.18); background:#1c2a44; aspect-ratio:16/8; }
+  .carousel-preview canvas { width:100%; height:100%; display:block; }
+  .carousel-name { margin-top:9px; text-align:center; font-size:11px; letter-spacing:2.5px;
+    font-weight:700; color:#ffe08a; }
   .optrow { display:flex; flex-wrap:wrap; gap:7px; }
   .chip { padding:8px 11px; border-radius:9px; font-size:11px; letter-spacing:1px; cursor:pointer;
     background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#fff; font-family:inherit;
     display:inline-flex; align-items:center; gap:6px; }
   .chip.sel { background:#ffe08a; color:#1b2338; border-color:#ffe08a; font-weight:700; }
-  .chip.rainbow { background:linear-gradient(90deg,#f77,#fd6,#7e7,#6cf,#c8f); color:#1b2338; font-weight:700; }
-  .chip.rainbow.sel { box-shadow:0 0 0 2px #fff inset; }
-  .chip .swatch { width:11px; height:11px; border-radius:50%; display:inline-block; flex:none;
-    border:1px solid rgba(0,0,0,.25); }
 
   #perfectFlash { position:fixed; left:50%; top:28%; transform:translate(-50%,-50%);
     font-size:24px; font-weight:700; letter-spacing:6px; color:#fff; opacity:0;
@@ -346,7 +350,6 @@
   <div class="panel" id="pauseFree" style="display:none">
     <h2>FREE PLAY</h2>
     <h1>YOUR RULES</h1>
-    <div id="freePreview"><canvas id="freePreviewCv"></canvas><div id="freePreviewLabel"></div></div>
     <div id="freeOptsBody"></div>
     <button class="btn primary" id="btnFreeStart">START BUILDING</button>
     <div class="back" id="btnFreeBack">&#8592; BACK</div>
@@ -396,6 +399,7 @@
     <div class="hearts-explainer"><span class="h">&hearts;</span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
   </div>
   <div class="res-btn-hint" id="resHint">TAP TO CONTINUE</div>
+  <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h">♥</span>USE HEART</button>
   <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h">♥</span>GET HEARTS</button>
   <button class="no-tap res-menu-btn" id="btnWatchAd">WATCH AD +♥</button>
   <button class="no-tap res-menu-btn" id="btnResMainMenu">MAIN MENU</button>
@@ -824,31 +828,45 @@ function updateMuteButtons(){
 function toggleMute(){ progress.muted=!progress.muted; saveProgress(); updateMuteButtons(); if(!progress.muted) sndClick(); }
 
 /* ==================== AMBIENT MUSIC ====================
-   A soft, bright chime pattern — no continuous drone — built from the same oscillator-based
-   tone() used for every other sound effect here. It steps up through a major pentatonic
-   scale (the most consonant, least "intimidating" scale there is) in a gentle loop: slow
-   and relaxed near the bottom of the tower, speeding up — and drifting a little higher in
-   pitch — the closer you get to the top, so climbing has a musical payoff instead of a
-   looming hum underneath it. Driven once a frame from frame(): it just reads how close the
-   tower is to its top floor and goes quiet whenever state isn't 'playing', so there's no
-   call site that can forget to silence it. */
-const AMBIENT_SCALE=[0,2,4,7,9,12,14,16,19];   // major pentatonic across a couple of octaves
-let ambientNoteIdx=0, ambientNextPulse=0;
+   A quiet generative drone plus a periodic pulse, built the same way as the rest of this
+   file's sound effects — oscillators, no audio assets. Rather than starting/stopping it at
+   every individual place gameplay can begin or end (pause, hearts-continue, free play,
+   tutorial, retries…), it's driven once a frame from frame(): it just reads how close the
+   current tower is to its top floor and fades toward silence whenever state isn't 'playing',
+   so there's no call site that can forget to silence it. */
+let ambient=null;
+function ensureAmbient(){
+  if(ambient) return ambient;
+  const ac=audio();
+  const master=ac.createGain(); master.gain.value=0; master.connect(ac.destination);
+  const filt=ac.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=650; filt.connect(master);
+  const o1=ac.createOscillator(), o2=ac.createOscillator();
+  o1.type='sine'; o2.type='sine';
+  const g1=ac.createGain(), g2=ac.createGain(); g1.gain.value=.5; g2.gain.value=.32;
+  o1.connect(g1); g1.connect(filt); o2.connect(g2); g2.connect(filt);
+  o1.start(); o2.start();
+  ambient={ ac, master, filt, o1, o2 };
+  return ambient;
+}
+let ambientNextPulse=0;
 function ambientProgress(){
   if(isFree) return Math.min(1,(score%40)/40);   // free play is endless, so cycle the tension instead of maxing out forever
   return N>0 ? Math.min(1, score/N) : 0;
 }
 function updateAmbient(){
   const audible = state==='playing' && !paused && !progress.muted;
+  if(!ambient && !audible) return;   // never touch WebAudio before it's actually needed
+  const amb=ensureAmbient(), now=amb.ac.currentTime, p=ambientProgress();
+  amb.master.gain.setTargetAtTime(audible ? .05+p*.10 : 0, now, .6);
+  amb.filt.frequency.setTargetAtTime(650+p*2200, now, .8);
+  const root=82.4*(1+p*0.55);                    // E2 drifting up toward ~E3 near the top
+  amb.o1.frequency.setTargetAtTime(root, now, 1.5);
+  amb.o2.frequency.setTargetAtTime(root*1.5, now, 1.5);   // a calm open fifth
   if(!audible){ ambientNextPulse=0; return; }
-  const now=audio().currentTime;
-  if(now<ambientNextPulse) return;
-  const p=ambientProgress();
-  const root=523.25*Math.pow(2,p*0.42);        // C5 drifting up toward ~D6 near the top
-  const semis=AMBIENT_SCALE[ambientNoteIdx%AMBIENT_SCALE.length];
-  tone(root*Math.pow(2,semis/12), .5, 'sine', .045+p*.045);
-  ambientNoteIdx++;
-  ambientNextPulse = now + Math.max(.22, 1.05-p*0.80);   // 1.05s apart near the bottom, ~0.22s near the top
+  if(now>=ambientNextPulse){
+    tone(root*4*(0.98+Math.random()*0.04), .4, 'triangle', .045, root*3);
+    ambientNextPulse = now + Math.max(.35, 1.3-p*0.85);   // 1.3s apart at the base, ~0.45s near the top
+  }
 }
 
 /* ==================== HAPTICS ==================== */
@@ -2105,6 +2123,7 @@ function finish(won){
   state='result'; mover=null; totalPerfects+=perfects; tutorHide();
   showHearts();
   const canContinue = !won && stack.length>0 && stack.length<=N;
+  S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
   S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
   if(won) sndWin();
@@ -2132,13 +2151,18 @@ function finish(won){
       renderTower(S('yoursCv'), snap, snap.some(b=>b.isSpire));
     });
   };
+  // The big explanatory heart popup is a one-time tutorial teaching moment, not something
+  // that shows on every real-level or Free Play loss — everywhere else just uses the small
+  // inline USE HEART button above (toggled higher up), like every other level always has.
+  const showTutorialPopup = canContinue && curLevel===0 && progress.hearts>0;
   setTimeout(()=>{
-    if(canContinue && progress.hearts>0) showHeartOverlay(reveal); else reveal();
+    if(showTutorialPopup) showHeartOverlay(reveal); else reveal();
   }, won?1600:800);
 }
 function finishFree(){
   state='result'; mover=null;
   const canContinue = stack.length>0;
+  S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
   S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
   S('compareWrap').style.display='none';
@@ -2154,10 +2178,9 @@ function finishFree(){
   S('resHint').textContent='TAP TO BUILD AGAIN';
   S('resHint').dataset.free='1';
   hideHUD(); S('menuBtn').classList.remove('show');
-  const reveal=()=>S('resultScreen').classList.add('visible');
-  setTimeout(()=>{
-    if(canContinue && progress.hearts>0) showHeartOverlay(reveal); else reveal();
-  },450);
+  // Free Play always uses the small inline USE HEART button, same as every real level past
+  // the tutorial — never the big popup, that's a one-time tutorial thing only.
+  setTimeout(()=>S('resultScreen').classList.add('visible'),450);
 }
 
 function updateHUD(){ scoreEl.textContent=score; progEl.textContent = isFree ? 'FREE PLAY' : (score+' / '+N); }
@@ -2188,7 +2211,7 @@ function buildLevelList(){
   const el=S('levelList'); el.innerHTML='';
   const free=document.createElement('button'); free.className='btn lvl-btn free';
   free.innerHTML='<span>FREE PLAY<small>ENDLESS \u00b7 PICK SHAPE, COLOUR &amp; SKY</small></span><span class="n">\u2605</span>';
-  free.onclick=e=>{ e.stopPropagation(); sndClick(); buildFreeOpts(); showPanel('free'); };
+  free.onclick=e=>{ e.stopPropagation(); sndClick(); showPanel('free'); buildFreeOpts(); };
   el.appendChild(free);
   const tutorialDone = progress.highestUnlocked>=1 || progress.unlockedAll;
   LEVELS.forEach((lv,i)=>{
@@ -2226,75 +2249,122 @@ const FREE_UI={
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
   speed:['Slow','Medium','Fast','Random'],
 };
-function renderFreePreview(){
-  const cv=S('freePreviewCv'); if(!cv) return;
+// Draws one carousel's current-selection preview: the actual background scene, a flat shape
+// icon, or a plain colour swatch. Same canvas-scaling dance as every other preview in this
+// file (match backing size to devicePixelRatio, clear, redraw).
+function drawCarouselPreview(cv, group, key){
   const rect=cv.getBoundingClientRect(), w=Math.max(rect.width,10), h=Math.max(rect.height,10);
   const dpr=Math.min(window.devicePixelRatio||1,2), pw=Math.round(w*dpr), ph=Math.round(h*dpr);
   if(cv.width!==pw||cv.height!==ph){ cv.width=pw; cv.height=ph; }
   const pc=cv.getContext('2d'); pc.setTransform(dpr,0,0,dpr,0,0); pc.clearRect(0,0,w,h);
 
-  const bg=freeConfig.bg, citySc=scenes[bg];
-  if(citySc){
-    pc.drawImage(citySc,0,0,citySc.width,citySc.height,0,0,w,h);
-  } else {
-    // the four generic skies aren't cached scene canvases — mirror drawFreeBg()'s own palette
-    const g=pc.createLinearGradient(0,0,0,h);
-    if(bg==='day'){ g.addColorStop(0,'#5aa0dc'); g.addColorStop(1,'#c7e2f2'); }
-    else if(bg==='dusk'){ g.addColorStop(0,'#3a3f74'); g.addColorStop(.5,'#c96a6a'); g.addColorStop(1,'#f0b06a'); }
-    else if(bg==='night'){ g.addColorStop(0,'#0b1436'); g.addColorStop(1,'#26325e'); }
-    else { g.addColorStop(0,'#c9d8e4'); g.addColorStop(1,'#eef4f8'); }
-    pc.fillStyle=g; pc.fillRect(0,0,w,h);
-    if(bg==='night'){ pc.fillStyle='rgba(255,255,255,.8)';
-      for(let i=0;i<24;i++) pc.fillRect((i*41%w),(i*23%(h*0.7)),1.2,1.2); }
-    if(bg==='snow'){ pc.fillStyle='rgba(255,255,255,.9)';
-      for(let i=0;i<22;i++){ pc.beginPath(); pc.arc((i*33%w),(i*19%h),1.1,0,7); pc.fill(); } }
+  if(group==='bg'){
+    const citySc=scenes[key];
+    if(citySc){
+      pc.drawImage(citySc,0,0,citySc.width,citySc.height,0,0,w,h);
+    } else {
+      // the four generic skies aren't cached scene canvases — mirror drawFreeBg()'s own palette
+      const g=pc.createLinearGradient(0,0,0,h);
+      if(key==='day'){ g.addColorStop(0,'#5aa0dc'); g.addColorStop(1,'#c7e2f2'); }
+      else if(key==='dusk'){ g.addColorStop(0,'#3a3f74'); g.addColorStop(.5,'#c96a6a'); g.addColorStop(1,'#f0b06a'); }
+      else if(key==='night'){ g.addColorStop(0,'#0b1436'); g.addColorStop(1,'#26325e'); }
+      else { g.addColorStop(0,'#c9d8e4'); g.addColorStop(1,'#eef4f8'); }
+      pc.fillStyle=g; pc.fillRect(0,0,w,h);
+      if(key==='night'){ pc.fillStyle='rgba(255,255,255,.8)';
+        for(let i=0;i<24;i++) pc.fillRect((i*41%w),(i*23%(h*0.7)),1.2,1.2); }
+      if(key==='snow'){ pc.fillStyle='rgba(255,255,255,.9)';
+        for(let i=0;i<22;i++){ pc.beginPath(); pc.arc((i*33%w),(i*19%h),1.1,0,7); pc.fill(); } }
+    }
+  } else if(group==='shape'){
+    const poly=(FREE_SHAPES[key]||FREE_SHAPES.square)();
+    const sz=Math.min(w,h)*0.64;
+    pc.save(); pc.translate(w/2,h/2);
+    pc.beginPath();
+    poly.forEach((p,i)=>{ const px=p[0]/R0*sz, py=p[1]/R0*sz*0.6; i?pc.lineTo(px,py):pc.moveTo(px,py); });
+    pc.closePath();
+    pc.fillStyle='#ffe08a'; pc.fill();
+    pc.strokeStyle='rgba(0,0,0,.3)'; pc.lineWidth=1.6; pc.stroke();
+    pc.restore();
+  } else if(group==='color'){
+    const r=Math.min(w,h)*0.32;
+    pc.beginPath(); pc.arc(w/2,h/2,r,0,7);
+    if(key==='rainbow'){
+      const g=pc.createLinearGradient(w/2-r,0,w/2+r,0);
+      g.addColorStop(0,'#f77'); g.addColorStop(.25,'#fd6'); g.addColorStop(.5,'#7e7'); g.addColorStop(.75,'#6cf'); g.addColorStop(1,'#c8f');
+      pc.fillStyle=g;
+    } else if(key==='random'){
+      pc.fillStyle='rgba(255,255,255,.35)';
+    } else {
+      const cc=FREE_COLORS[key]||FREE_COLORS.blue;
+      pc.fillStyle='hsl('+cc.h+','+cc.s+'%,'+cc.l+'%)';
+    }
+    pc.fill();
+    pc.strokeStyle='rgba(0,0,0,.3)'; pc.lineWidth=1.6; pc.stroke();
   }
+}
+// One carousel per visual option (background, shape, colour): a left/right arrow either side
+// of a preview showing exactly what that pick looks like, cycling one at a time instead of a
+// grid of small text chips. Speed has no visual to preview, so it stays a plain chip row.
+function buildCarousel(container, group){
+  const entries=FREE_UI[group];
+  const wrap=document.createElement('div'); wrap.className='carousel';
+  const lab=document.createElement('div'); lab.className='lab';
+  lab.textContent = group==='bg'?'BACKGROUND':group.toUpperCase();
+  const row=document.createElement('div'); row.className='carousel-row';
+  const prevBtn=document.createElement('button'); prevBtn.className='carousel-arrow'; prevBtn.textContent='‹';
+  const nextBtn=document.createElement('button'); nextBtn.className='carousel-arrow'; nextBtn.textContent='›';
+  const previewWrap=document.createElement('div'); previewWrap.className='carousel-preview';
+  const cv=document.createElement('canvas');
+  previewWrap.appendChild(cv);
+  const nameEl=document.createElement('div'); nameEl.className='carousel-name';
+  row.appendChild(prevBtn); row.appendChild(previewWrap); row.appendChild(nextBtn);
+  wrap.appendChild(lab); wrap.appendChild(row); wrap.appendChild(nameEl);
 
-  // a small flat swatch of the selected shape + colour, so the preview covers all three
-  // visual picks at once, not just the background
-  const cx=w*0.82, cy=h*0.80, sz=Math.min(w,h)*0.30;
-  const poly=(FREE_SHAPES[freeConfig.shape]||FREE_SHAPES.square)();
-  const cc = freeConfig.color==='rainbow' ? {h:20,s:70,l:60} : freeConfig.color==='random' ? {h:210,s:8,l:82} : (FREE_COLORS[freeConfig.color]||FREE_COLORS.blue);
-  pc.save(); pc.translate(cx,cy);
-  pc.beginPath();
-  poly.forEach((p,i)=>{ const px=p[0]/R0*sz, py=p[1]/R0*sz*0.55; i?pc.lineTo(px,py):pc.moveTo(px,py); });
-  pc.closePath();
-  pc.fillStyle='hsl('+cc.h+','+cc.s+'%,'+cc.l+'%)'; pc.fill();
-  pc.strokeStyle='rgba(0,0,0,.35)'; pc.lineWidth=1.4; pc.stroke();
-  pc.restore();
-
-  const found=FREE_UI.bg.find(e=>e[1]===bg);
-  S('freePreviewLabel').textContent = found ? found[0].toUpperCase() : bg.toUpperCase();
+  const indexOf=()=> entries.findIndex(e=>(Array.isArray(e)?e[1]:e.toLowerCase())===freeConfig[group]);
+  function render(){
+    const idx=Math.max(0,indexOf());
+    const entry=entries[idx];
+    const [label,key]=Array.isArray(entry)?entry:[entry,entry.toLowerCase()];
+    nameEl.textContent=label.toUpperCase();
+    drawCarouselPreview(cv,group,key);
+  }
+  function step(dir){
+    const idx=indexOf(), next=(idx+dir+entries.length)%entries.length;
+    const entry=entries[next];
+    freeConfig[group] = Array.isArray(entry) ? entry[1] : entry.toLowerCase();
+    progress.freeConfig=freeConfig; saveProgress();
+    sndClick(); render();
+  }
+  prevBtn.onclick=e=>{ e.stopPropagation(); step(-1); };
+  nextBtn.onclick=e=>{ e.stopPropagation(); step(1); };
+  // Attach before the first render — getBoundingClientRect() (inside drawCarouselPreview)
+  // returns 0×0 for a detached element, which would draw the first frame at a tiny
+  // fallback size and leave it stretched blurry until the next step().
+  container.appendChild(wrap);
+  render();
+  return { render };
 }
 function buildFreeOpts(){
   const body=S('freeOptsBody'); body.innerHTML='';
-  Object.keys(FREE_UI).forEach(group=>{
-    const wrap=document.createElement('div'); wrap.className='optgroup';
-    const lab=document.createElement('div'); lab.className='lab';
-    lab.textContent = group==='bg'?'BACKGROUND':group.toUpperCase();
-    wrap.appendChild(lab);
-    const row=document.createElement('div'); row.className='optrow';
-    FREE_UI[group].forEach(entry=>{
-      const [label,key] = Array.isArray(entry) ? entry : [entry, entry.toLowerCase()];
-      const chip=document.createElement('button'); chip.className='chip';
-      if(key==='rainbow') chip.className+=' rainbow';
-      if(group==='color' && key!=='rainbow'){
-        const sw=document.createElement('span'); sw.className='swatch';
-        const cc = key==='random' ? {h:210,s:8,l:82} : (FREE_COLORS[key]||FREE_COLORS.blue);
-        sw.style.background='hsl('+cc.h+','+cc.s+'%,'+cc.l+'%)';
-        chip.appendChild(sw);
-      }
-      chip.appendChild(document.createTextNode(label));
-      if(freeConfig[group]===key) chip.classList.add('sel');
-      chip.onclick=e=>{ e.stopPropagation(); sndClick(); freeConfig[group]=key;
-        progress.freeConfig=freeConfig; saveProgress();
-        [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel');
-        renderFreePreview(); };
-      row.appendChild(chip);
-    });
-    wrap.appendChild(row); body.appendChild(wrap);
+  buildCarousel(body,'bg');
+  buildCarousel(body,'shape');
+  buildCarousel(body,'color');
+
+  const wrap=document.createElement('div'); wrap.className='carousel';
+  const lab=document.createElement('div'); lab.className='lab'; lab.textContent='SPEED';
+  wrap.appendChild(lab);
+  const row=document.createElement('div'); row.className='optrow';
+  FREE_UI.speed.forEach(entry=>{
+    const [label,key]=Array.isArray(entry)?entry:[entry,entry.toLowerCase()];
+    const chip=document.createElement('button'); chip.className='chip';
+    chip.textContent=label;
+    if(freeConfig.speed===key) chip.classList.add('sel');
+    chip.onclick=e=>{ e.stopPropagation(); sndClick(); freeConfig.speed=key;
+      progress.freeConfig=freeConfig; saveProgress();
+      [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel'); };
+    row.appendChild(chip);
   });
-  renderFreePreview();
+  wrap.appendChild(row); body.appendChild(wrap);
 }
 S('menuBtn').onclick=e=>{ e.stopPropagation();
   if(state==='playing') openPause();
@@ -2309,7 +2379,8 @@ function openShop(){ S('shopOverlay').classList.add('show'); }
 function closeShop(){ S('shopOverlay').classList.remove('show'); }
 // True once you've collapsed a tower with floors still standing — real level or Free Play —
 // and haven't yet either continued or moved on. Shared by every path that can grant a heart
-// after the fact (shop, watch-ad) to decide whether it's worth re-offering the continue popup.
+// after the fact (shop, watch-ad) to decide whether the inline USE HEART button should
+// reappear.
 function canContinueNow(){
   return state==='result' && stack.length>0 &&
     (S('resHint').dataset.free==='1' || S('resHint').textContent==='TAP TO RETRY');
@@ -2320,16 +2391,17 @@ document.querySelectorAll('.shop-btn').forEach(btn=>{
   btn.onclick=e=>{ e.stopPropagation(); sndClick();
     closeShop(); playAdForHeart(()=>{
       if(state==='result'){
-        S('btnGetHearts').classList.toggle('show', canContinueNow() && progress.hearts<=0);
+        const cc=canContinueNow();
+        S('btnUseHearts').classList.toggle('show', cc && progress.hearts>0);
+        S('btnGetHearts').classList.toggle('show', cc && progress.hearts<=0);
         S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
-        if(canContinueNow() && progress.hearts>0) showHeartOverlay();
       }
     });
   };
 });
 S('btnWatchAd').onclick=e=>{ e.stopPropagation(); sndClick();
   playAdForHeart(()=>{ S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
-    if(canContinueNow() && progress.hearts>0) showHeartOverlay();
+    S('btnUseHearts').classList.toggle('show', canContinueNow() && progress.hearts>0);
   });
 };
 function buyNoAds(){
@@ -2342,28 +2414,16 @@ function buyNoAds(){
 }
 S('btnNoAds').onclick=e=>{ e.stopPropagation(); sndClick(); buyNoAds(); };
 S('btnOptLevels').onclick=e=>{ e.stopPropagation(); sndClick(); levelsFromMenu=true; buildLevelList(); showPanel('levels'); };
-S('btnOptFree').onclick=e=>{ e.stopPropagation(); sndClick(); buildFreeOpts(); showPanel('free'); };
+S('btnOptFree').onclick=e=>{ e.stopPropagation(); sndClick(); showPanel('free'); buildFreeOpts(); };
 S('btnOptNoAds').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); buyNoAds(); };
 S('btnOptBack').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
 S('btnMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
 S('btnOptMute').onclick=e=>{ e.stopPropagation(); toggleMute(); };
 S('btnHeartPlus').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
-// The heart-continue popup: a big heart icon, a square USE HEART button beside it, and a
-// one-line explanation of what a heart actually does — shown instead of (in front of) the
-// normal result screen right when you collapse, for real levels and Free Play alike.
-// onDecline runs if you back out instead — normally that reveals the result screen, but when
-// this is re-offered later (after topping up hearts from an already-visible result screen)
-// there's nothing left to reveal, so onDecline is optional and just closes the popup.
-let heartDeclineAction=null;
-function showHeartOverlay(onDecline){
-  heartDeclineAction = onDecline || null;
-  S('heartOverlay').classList.add('show');
-}
-S('btnHeartContinue').onclick=e=>{ e.stopPropagation();
-  if(progress.hearts<=0) return;
-  sndClick(); consumeHeart();
-  S('heartOverlay').classList.remove('show');
-  heartDeclineAction=null;
+// Consuming a heart to resume mid-tower — shared by the small inline USE HEART button (every
+// real level past the tutorial, and Free Play) and the big tutorial popup's own button below.
+function useHeartAndResume(){
+  consumeHeart();
   S('resultScreen').classList.remove('visible');
   transitioning=true;
   setTimeout(()=>{
@@ -2372,6 +2432,26 @@ S('btnHeartContinue').onclick=e=>{ e.stopPropagation();
     // spawn a fresh mover for the next floor and go back to playing.
     debris=[]; state='playing'; hideHearts(); showHUD(); spawnMover();
   }, 320);
+}
+S('btnUseHearts').onclick=e=>{ e.stopPropagation();
+  if(progress.hearts<=0) return;
+  sndClick(); S('btnUseHearts').classList.remove('show'); useHeartAndResume();
+};
+// The big heart popup — a large heart icon, a square USE HEART button beside it, and a
+// one-line explanation of what a heart actually does — is a one-time tutorial teaching
+// moment only (see finish()'s showTutorialPopup). Every other loss just uses the small
+// inline button above instead.
+let heartDeclineAction=null;
+function showHeartOverlay(onDecline){
+  heartDeclineAction = onDecline || null;
+  S('heartOverlay').classList.add('show');
+}
+S('btnHeartContinue').onclick=e=>{ e.stopPropagation();
+  if(progress.hearts<=0) return;
+  sndClick();
+  S('heartOverlay').classList.remove('show');
+  heartDeclineAction=null;
+  useHeartAndResume();
 };
 S('heartDecline').onclick=e=>{ e.stopPropagation(); sndClick();
   S('heartOverlay').classList.remove('show');
