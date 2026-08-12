@@ -617,8 +617,8 @@ const LEVELS=[
     crown:'gothic', floorH:15, plate:bigBenPlate,
     pal:{h0:38,h1:40, s0:12,s1:7, l0:68,l1:85} },
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
-    crown:'shard', floorH:16, plate:shardPlate,
-    pal:{h0:200,h1:207, s0:38,s1:22, l0:58,l1:86} },
+    crown:'none', floorH:16, plate:shardPlate,
+    pal:{h0:206,h1:208, s0:14,s1:8, l0:62,l1:88} },
   { name:'MILAD TOWER', city:'TEHRAN', metresTxt:'435 M', floors:48, bg:'tehran',
     crown:'mast', floorH:16, plate:miladPlate,
     pal:{h0:210,h1:208, s0:8,s1:5, l0:74,l1:90} },
@@ -1760,7 +1760,7 @@ function drawPrismLite(c,poly,y,h,colIdx){
 
 /* ==================== CROWNS / SPIRE ==================== */
 function anchorOf(b){ const ct=polyCentroid(b.poly); return proj(ct[0], b.y+b.h, ct[1]); }
-const CROWN_H={ shard:96, needle:180, antenna:150, mast:150, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
+const CROWN_H={ needle:180, antenna:150, mast:150, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
 function crownHeight(){ return CROWN_H[L().crown] || 120; }
 function drawCrown(c,p,t,k,ghost,tiny){
   const crown=L().crown; if(crown==='none') return;
@@ -1776,31 +1776,27 @@ function drawCrown(c,p,t,k,ghost,tiny){
   const fill = ghost ? 'rgba(178,238,255,.55)' : css({h:bc.h,s:capS,l:capL}, 9, .98);
   const dark = ghost ? 'rgba(115,200,235,.55)' : css({h:bc.h,s:capS,l:capL}, -20, .98);
   // solid two-tone tapered post, with an enforced minimum width so nothing tapers to a hairline
-  const post=(bW,tW,bY,tY)=>{
-    bW=Math.max(bW,U*0.008); tW=Math.max(tW,U*0.010);
-    c.fillStyle=fill; c.beginPath(); c.moveTo(X-bW,bY); c.lineTo(X-tW,tY); c.lineTo(X+tW,tY); c.lineTo(X+bW,bY); c.closePath(); c.fill();
-    c.fillStyle=dark; c.beginPath(); c.moveTo(X,bY); c.lineTo(X,tY); c.lineTo(X+tW,tY); c.lineTo(X+bW,bY); c.closePath(); c.fill();
+  // (fc/dc let a caller use the tower's own unclamped colour instead of the crown's metal tone;
+  // minB/minT let the very last segment of a mast taper past the usual floor, to a real point)
+  const post=(bW,tW,bY,tY,fc,dc,minB,minT)=>{
+    bW=Math.max(bW,minB??U*0.008); tW=Math.max(tW,minT??U*0.010);
+    c.fillStyle=fc||fill; c.beginPath(); c.moveTo(X-bW,bY); c.lineTo(X-tW,tY); c.lineTo(X+tW,tY); c.lineTo(X+bW,bY); c.closePath(); c.fill();
+    c.fillStyle=dc||dark; c.beginPath(); c.moveTo(X,bY); c.lineTo(X,tY); c.lineTo(X+tW,tY); c.lineTo(X+bW,bY); c.closePath(); c.fill();
   };
   // small solid cap block terminating a mast/spire — an actual block, not a line-end
   const cap=(w,h2,yTop)=>{ c.fillStyle=fill; c.fillRect(X-w,yTop-h2,w*2,h2); c.fillStyle=dark; c.fillRect(X,yTop-h2,w,h2); };
 
-  if(crown==='shard'){                    // The Shard — eight tall, slender glass shards jutting up around
-                                           // the central axis, uneven heights and left ungathered at the
-                                           // very top (the real spire famously never closes to one point)
-    const blades=[[-.074,.62],[-.050,.94],[-.024,.78],[.000,1],[.026,.72],[.050,.90],[.074,.58],[.096,.40]];
-    const bw=U*0.015;
-    for(const b of blades){ const ax=X+b[0]*U, ay=Y-H*b[1];
-      c.fillStyle=fill; c.beginPath(); c.moveTo(ax-bw,Y+U*0.015); c.lineTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.closePath(); c.fill();
-      c.fillStyle=dark; c.beginPath(); c.moveTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.lineTo(ax,Y+U*0.015); c.closePath(); c.fill(); }
-  }
-  else if(crown==='needle'){              // Burj Khalifa — a real spire is a thin steel mast, not a
+  if(crown==='needle'){              // Burj Khalifa — a real spire is a thin steel mast, not a
                                            // wide cone: it tapers hard in the first ~15% (the roof-level
                                            // mechanical transition) then runs as a long, nearly-straight
-                                           // thin rod for most of its height, ending in a fine point
-    post(U*0.100,U*0.026, Y,        Y-H*0.15);
-    post(U*0.026,U*0.017, Y-H*0.15, Y-H*0.45);
-    post(U*0.017,U*0.010, Y-H*0.45, Y-H*0.80);
-    post(U*0.010,U*0.0006,Y-H*0.80, Y-H);
+                                           // thin rod for most of its height, ending in a fine point.
+                                           // It's the same material as the tower itself, not a separately
+                                           // tinted metal cap, so it uses the tower's own unclamped colour.
+    const spireFill=css({h:bc.h,s:bc.s,l:bc.l},9,.98), spireDark=css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
+    post(U*0.100,U*0.026, Y,        Y-H*0.15, spireFill,spireDark);
+    post(U*0.026,U*0.017, Y-H*0.15, Y-H*0.45, spireFill,spireDark);
+    post(U*0.017,U*0.010, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.006,U*0.003);
+    post(U*0.010,U*0.0008,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.003,0);
   }
   else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
     c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
