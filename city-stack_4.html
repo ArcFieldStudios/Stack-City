@@ -1792,20 +1792,24 @@ function drawCrown(c,p,t,k,ghost,tiny){
                                            // thin rod for most of its height, ending in a fine point.
                                            // It's the same material as the tower itself, not a separately
                                            // tinted metal cap, so it uses the tower's own unclamped colour.
-    const spireFill=css({h:bc.h,s:bc.s,l:bc.l},9,.98), spireDark=css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
+    // Exactly the tower's own colours: fill matches the block's top-cap shade (css(col,11)
+    // in drawPrismLite) and dark is only a shade off it, not the steep-side-face darkness —
+    // at this thinness a strong dark half read as a mismatched near-black tip.
+    const spireFill=css({h:bc.h,s:bc.s,l:bc.l},2,.98), spireDark=css({h:bc.h,s:bc.s,l:bc.l},-9,.98);
     // the base continues the shaft-top block's own round cross-section — a smoothly
     // tapering stack of circular rings, the same technique the Milad/CN mast and the
     // Petronas pinnacle use — instead of a flat-edged triangular flare. The base radius
-    // is measured to match the shaft-top block's own rendered width exactly (not guessed),
-    // and the mast picks up at the exact point/width the last ring ends at, so there's no
-    // seam or gap between the rings and the rod, or between the rings and the roof.
+    // is measured to match the shaft-top block's own rendered width exactly (not guessed).
+    // Ring spacing is kept smaller than the sum of each consecutive pair's own vertical
+    // radius, so the rings actually overlap all the way up — a fixed spacing with shrinking
+    // radii left the smallest two rings not touching at all.
     let yy=Y, lastR=0.118; const rings=[0.118,0.094,0.073,0.055,0.040];
     for(const r of rings){
-      c.fillStyle=spireFill; c.beginPath(); c.ellipse(X,yy,U*r,U*r*0.4,0,0,7); c.fill();
-      c.fillStyle=spireDark; c.beginPath(); c.ellipse(X,yy+U*r*0.10,U*r,U*r*0.2,0,0,Math.PI); c.fill();
-      lastR=r; yy-=H*0.045;
+      c.fillStyle=spireFill; c.beginPath(); c.ellipse(X,yy,U*r,U*r*0.46,0,0,7); c.fill();
+      c.fillStyle=spireDark; c.beginPath(); c.ellipse(X,yy+U*r*0.10,U*r,U*r*0.23,0,0,Math.PI); c.fill();
+      lastR=r; yy-=H*0.030;
     }
-    yy+=H*0.045; // undo the final decrement — the mast starts exactly where the last ring sits
+    yy+=H*0.030; // undo the final decrement — the mast starts exactly where the last ring sits
     post(U*lastR,U*0.020, yy,        Y-H*0.45, spireFill,spireDark);
     post(U*0.020,U*0.012, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.008,U*0.004);
     post(U*0.012,U*0.0012,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.004,0);
