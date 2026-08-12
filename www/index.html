@@ -1793,13 +1793,18 @@ function drawCrown(c,p,t,k,ghost,tiny){
                                            // It's the same material as the tower itself, not a separately
                                            // tinted metal cap, so it uses the tower's own unclamped colour.
     const spireFill=css({h:bc.h,s:bc.s,l:bc.l},9,.98), spireDark=css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
-    // a filler disc under the flare guarantees full coverage of the shaft-top block's own
-    // round cap regardless of exact width match, so no ring of its colour ever peeks out
-    c.fillStyle=spireFill; c.beginPath(); c.ellipse(X,Y,U*0.135,U*0.05,0,0,7); c.fill();
-    post(U*0.135,U*0.036, Y,        Y-H*0.15, spireFill,spireDark);
-    post(U*0.036,U*0.024, Y-H*0.15, Y-H*0.45, spireFill,spireDark);
-    post(U*0.024,U*0.014, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.009,U*0.005);
-    post(U*0.014,U*0.0012,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.005,0);
+    // the base continues the shaft-top block's own round cross-section — a smoothly
+    // tapering stack of circular rings, the same technique the Milad/CN mast and the
+    // Petronas pinnacle use — instead of a flat-edged triangular flare
+    let yy=Y; const rings=[0.135,0.108,0.084,0.063,0.046];
+    for(const r of rings){
+      c.fillStyle=spireFill; c.beginPath(); c.ellipse(X,yy,U*r,U*r*0.4,0,0,7); c.fill();
+      c.fillStyle=spireDark; c.beginPath(); c.ellipse(X,yy+U*r*0.10,U*r,U*r*0.2,0,0,Math.PI); c.fill();
+      yy-=H*0.05;
+    }
+    post(U*0.032,U*0.020, yy,        Y-H*0.45, spireFill,spireDark);
+    post(U*0.020,U*0.012, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.008,U*0.004);
+    post(U*0.012,U*0.0012,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.004,0);
   }
   else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
     c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
