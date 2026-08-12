@@ -1229,7 +1229,9 @@ function buildScene(key){
     const wat=c.createLinearGradient(0,wy,0,H);
     wat.addColorStop(0,'#3fa5c4'); wat.addColorStop(1,'#2b7fa4');
     c.fillStyle=wat; c.fillRect(0,wy,W,H-wy);
-    palmIsland(c,W*.72,wy+(H-wy)*.5,Math.min((H-wy)*.42,46),'#e8d09c');
+    { const pr=Math.min((H-wy)*.6,120);          // Palm Jumeirah — trunk end touches the shoreline,
+                                                  // fronds and the crescent breakwater fan out into the sea
+      palmIsland(c,W*.70,wy+pr*.378-8,pr,'#e8d09c',true); }
     const pxs=[.08,.26,.50];
     for(let i=0;i<pxs.length;i++) palm(c,W*pxs[i],wy-2,u);
     pole(c,uaeFlag,W*.14,horizon+8,40*u,24*u);
@@ -1636,8 +1638,8 @@ function buildScene(key){
   return cv;
 }
 
-function palmIsland(c,cx,cy,r,sandCol){
-  c.save(); c.translate(cx,cy); c.scale(1,.42);
+function palmIsland(c,cx,cy,r,sandCol,flip){
+  c.save(); c.translate(cx,cy); c.scale(1,flip?-.42:.42);
   c.strokeStyle=sandCol; c.lineCap='round';
   c.lineWidth=r*.16; c.beginPath(); c.moveTo(0,r*.9); c.lineTo(0,-r*.55); c.stroke();
   c.lineWidth=r*.075;
@@ -1782,23 +1784,23 @@ function drawCrown(c,p,t,k,ghost,tiny){
   // small solid cap block terminating a mast/spire — an actual block, not a line-end
   const cap=(w,h2,yTop)=>{ c.fillStyle=fill; c.fillRect(X-w,yTop-h2,w*2,h2); c.fillStyle=dark; c.fillRect(X,yTop-h2,w,h2); };
 
-  if(crown==='shard'){                    // The Shard — a tight cluster of thin glass fins converging to an
-                                           // irregular point, continuing the hexagon's own taper (not spread
-                                           // out wide — the real fins bunch close around the central axis)
-    const blades=[[-.062,.56],[-.028,.90],[.004,1],[.030,.70],[.060,.48]];
-    const bw=U*0.026;
+  if(crown==='shard'){                    // The Shard — eight tall, slender glass shards jutting up around
+                                           // the central axis, uneven heights and left ungathered at the
+                                           // very top (the real spire famously never closes to one point)
+    const blades=[[-.074,.62],[-.050,.94],[-.024,.78],[.000,1],[.026,.72],[.050,.90],[.074,.58],[.096,.40]];
+    const bw=U*0.015;
     for(const b of blades){ const ax=X+b[0]*U, ay=Y-H*b[1];
       c.fillStyle=fill; c.beginPath(); c.moveTo(ax-bw,Y+U*0.015); c.lineTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.closePath(); c.fill();
       c.fillStyle=dark; c.beginPath(); c.moveTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.lineTo(ax,Y+U*0.015); c.closePath(); c.fill(); }
   }
-  else if(crown==='needle'){              // Burj Khalifa — one continuous tapering pinnacle to a sharp
-                                           // point (five stages, each picking up exactly where the last
-                                           // left off — no seams, no floating cap, no disc rings)
-    post(U*0.115,U*0.062, Y,        Y-H*0.30);
-    post(U*0.062,U*0.032, Y-H*0.30, Y-H*0.56);
-    post(U*0.032,U*0.015, Y-H*0.56, Y-H*0.78);
-    post(U*0.015,U*0.006, Y-H*0.78, Y-H*0.93);
-    post(U*0.006,U*0.0008,Y-H*0.93, Y-H);
+  else if(crown==='needle'){              // Burj Khalifa — a real spire is a thin steel mast, not a
+                                           // wide cone: it tapers hard in the first ~15% (the roof-level
+                                           // mechanical transition) then runs as a long, nearly-straight
+                                           // thin rod for most of its height, ending in a fine point
+    post(U*0.100,U*0.026, Y,        Y-H*0.15);
+    post(U*0.026,U*0.017, Y-H*0.15, Y-H*0.45);
+    post(U*0.017,U*0.010, Y-H*0.45, Y-H*0.80);
+    post(U*0.010,U*0.0006,Y-H*0.80, Y-H);
   }
   else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
     c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
