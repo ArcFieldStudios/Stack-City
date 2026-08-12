@@ -1791,12 +1791,14 @@ function drawCrown(c,p,t,k,ghost,tiny){
       c.fillStyle=fill; c.beginPath(); c.moveTo(ax-bw,Y+U*0.015); c.lineTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.closePath(); c.fill();
       c.fillStyle=dark; c.beginPath(); c.moveTo(ax,ay); c.lineTo(ax+bw,Y+U*0.015); c.lineTo(ax,Y+U*0.015); c.closePath(); c.fill(); }
   }
-  else if(crown==='needle'){              // Burj Khalifa — three solid tapering stages to a cap block
-    post(U*0.11, U*0.045, Y,        Y-H*0.34);
-    post(U*0.045,U*0.020, Y-H*0.33, Y-H*0.66);
-    post(U*0.020,U*0.011, Y-H*0.65, Y-H*0.92);
-    c.fillStyle=fill; [0.34,0.6].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*0.05,U*0.02,0,0,7); c.fill(); });
-    cap(U*0.014,H*0.05,Y-H);
+  else if(crown==='needle'){              // Burj Khalifa — one continuous tapering pinnacle to a sharp
+                                           // point (five stages, each picking up exactly where the last
+                                           // left off — no seams, no floating cap, no disc rings)
+    post(U*0.115,U*0.062, Y,        Y-H*0.30);
+    post(U*0.062,U*0.032, Y-H*0.30, Y-H*0.56);
+    post(U*0.032,U*0.015, Y-H*0.56, Y-H*0.78);
+    post(U*0.015,U*0.006, Y-H*0.78, Y-H*0.93);
+    post(U*0.006,U*0.0008,Y-H*0.93, Y-H);
   }
   else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
     c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
