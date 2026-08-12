@@ -1793,10 +1793,13 @@ function drawCrown(c,p,t,k,ghost,tiny){
                                            // It's the same material as the tower itself, not a separately
                                            // tinted metal cap, so it uses the tower's own unclamped colour.
     const spireFill=css({h:bc.h,s:bc.s,l:bc.l},9,.98), spireDark=css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
-    post(U*0.100,U*0.026, Y,        Y-H*0.15, spireFill,spireDark);
-    post(U*0.026,U*0.017, Y-H*0.15, Y-H*0.45, spireFill,spireDark);
-    post(U*0.017,U*0.010, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.006,U*0.003);
-    post(U*0.010,U*0.0008,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.003,0);
+    // a filler disc under the flare guarantees full coverage of the shaft-top block's own
+    // round cap regardless of exact width match, so no ring of its colour ever peeks out
+    c.fillStyle=spireFill; c.beginPath(); c.ellipse(X,Y,U*0.135,U*0.05,0,0,7); c.fill();
+    post(U*0.135,U*0.036, Y,        Y-H*0.15, spireFill,spireDark);
+    post(U*0.036,U*0.024, Y-H*0.15, Y-H*0.45, spireFill,spireDark);
+    post(U*0.024,U*0.014, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.009,U*0.005);
+    post(U*0.014,U*0.0012,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.005,0);
   }
   else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
     c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
@@ -1938,8 +1941,12 @@ function drawCrown(c,p,t,k,ghost,tiny){
   }
   c.restore();
 }
-function drawBlock(c,b,lite,crownK){
-  if(lite) drawPrismLite(c,b.poly,b.y,b.h,b.i); else drawPrism(c,b.poly,b.y,b.h,b.i);
+function drawBlock(c,b,lite,crownK,settled){
+  // A landed spire sits on a shaft-top floor that's the exact same footprint (both are the
+  // plate's t=1 shape) — normally a crown decoration hides that duplicate, but a crown-less
+  // building (The Shard) would show it as a redundant extra block once settled into the stack.
+  const skip = settled && b.isSpire && L().crown==='none';
+  if(!skip){ if(lite) drawPrismLite(c,b.poly,b.y,b.h,b.i); else drawPrism(c,b.poly,b.y,b.h,b.i); }
   if(b.isSpire) drawCrown(c, anchorOf(b), 1, crownK||1, false);
 }
 
@@ -2119,7 +2126,7 @@ function renderTower(cv,blocks,withCrown){
   c.translate(cw/2-(minX+maxX)/2*sc, chh-pad-maxY*sc);
   c.scale(sc,sc);
   for(const b of blocks){
-    drawPrismLite(c,b.poly,b.y,b.h,b.i);
+    if(!(b.isSpire && L().crown==='none')) drawPrismLite(c,b.poly,b.y,b.h,b.i);
     if(b.isSpire) drawCrown(c, anchorOf(b), 1, 1, false, true);
   }
   c.restore();
@@ -2644,7 +2651,7 @@ function frame(now){
   for(const b of stack){
     const sy=proj(0,b.y,0).y;
     if(sy+oy<-260||sy+oy>H+320) continue;
-    drawBlock(ctx,b,false,1);
+    drawBlock(ctx,b,false,1,true);
   }
   for(const d of debris) drawPrism(ctx,d.poly,d.y,d.h,d.i,Math.max(d.life,0),d.rot);
   if(mover&&state==='playing') drawBlock(ctx,mover,false,1);
