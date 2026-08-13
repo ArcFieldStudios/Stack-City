@@ -343,7 +343,7 @@
       <div class="heart-big-icon">♥</div>
       <button id="btnHeartContinue" class="heart-use-btn">USE<br>HEART</button>
     </div>
-    <p class="heart-explain">A heart gives you an extra life — keep building right where you left off.</p>
+    <p class="heart-explain" id="heartExplain">A heart gives you an extra life — keep building right where you left off.</p>
     <button id="heartDecline">NO THANKS</button>
   </div>
 </div>
@@ -775,7 +775,7 @@ function admob(){
   const cap=window.Capacitor;
   return (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.AdMob) || null;
 }
-let admobRewardReady=false, admobAdInFlight=false;
+let admobRewardReady=false, admobAdInFlight=false, pendingAdFail=null;
 function admobLoadRewarded(){
   const AdMob=admob(); if(!AdMob) return;
   admobRewardReady=false;
@@ -795,26 +795,32 @@ function admobLoadRewarded(){
   // reliable place to recover that stuck state.
   if(AdMob.addListener){
     AdMob.addListener('onRewardedVideoAdDismissed', ()=>{
-      if(admobAdInFlight){ admobAdInFlight=false; admobLoadRewarded(); }
+      if(admobAdInFlight){ admobAdInFlight=false; admobLoadRewarded();
+        const fail=pendingAdFail; pendingAdFail=null; if(fail) fail(); }
     });
     AdMob.addListener('onRewardedVideoAdFailedToShow', ()=>{
-      if(admobAdInFlight){ admobAdInFlight=false; toast('AD FAILED — TRY AGAIN'); admobLoadRewarded(); }
+      if(admobAdInFlight){ admobAdInFlight=false; toast('AD FAILED — TRY AGAIN'); admobLoadRewarded();
+        const fail=pendingAdFail; pendingAdFail=null; if(fail) fail(); }
     });
   }
 })();
 
-function playAdForHeart(cb){
-  if(progress.hearts>=MAX_HEARTS){ toast('HEARTS ALREADY FULL'); return; }
+// onFail (optional) fires if the ad can't be completed at all — e.g. the native ad is
+// dismissed before the reward is earned, or fails to show. Callers that put UI away before
+// calling this (like the KEEP BUILDING? popup) need it to put that UI back rather than
+// leaving the player stuck on a blank screen.
+function playAdForHeart(cb, onFail){
+  if(progress.hearts>=MAX_HEARTS){ toast('HEARTS ALREADY FULL'); if(onFail) onFail(); return; }
   const AdMob=admob();
   if(AdMob && admobRewardReady && !admobAdInFlight){
-    admobRewardReady=false; admobAdInFlight=true;
+    admobRewardReady=false; admobAdInFlight=true; pendingAdFail=onFail||null;
     AdMob.showRewardVideoAd()
-      .then(()=>{ grantHeart(); toast('+1 HEART ♥'); if(cb) cb(); })
-      .catch(()=>{ toast('AD FAILED — TRY AGAIN'); })
+      .then(()=>{ pendingAdFail=null; grantHeart(); toast('+1 HEART ♥'); if(cb) cb(); })
+      .catch(()=>{ pendingAdFail=null; toast('AD FAILED — TRY AGAIN'); if(onFail) onFail(); })
       .finally(()=>{ admobAdInFlight=false; admobLoadRewarded(); });
     return;
   }
-  if(AdMob && admobAdInFlight){ return; } // an ad is already showing — ignore the extra tap instead of stacking another
+  if(AdMob && admobAdInFlight){ if(onFail) onFail(); return; } // an ad is already showing — ignore the extra tap instead of stacking another
   const overlay=S('adOverlay'); const timerEl=S('adTimer'); const btn=S('adSkip');
   let sec=5; timerEl.textContent=sec; btn.disabled=true; btn.textContent='WATCHING…';
   overlay.classList.add('show');
@@ -2252,12 +2258,15 @@ function finish(won){
       renderTower(S('yoursCv'), snap, snap.some(b=>b.isSpire));
     });
   };
-  // The big explanatory heart popup is a one-time tutorial teaching moment, not something
-  // that shows on every real-level or Free Play loss — everywhere else just uses the small
-  // inline USE HEART button above (toggled higher up), like every other level always has.
-  const showTutorialPopup = canContinue && curLevel===0 && progress.hearts>0;
+  // The big "KEEP BUILDING?" popup shows for the tutorial (a one-time teaching moment, any
+  // loss) and, on every real level after that, whenever the tower fell after the halfway
+  // point — losing that much progress is worth a deliberate "are you sure?" instead of just
+  // silently offering the small inline USE HEART button. An earlier loss just uses that
+  // small inline button (toggled higher up) with no popup.
+  const halfwayThere = N>0 && score>=N/2;
+  const showKeepBuildingPopup = canContinue && (curLevel===0 || halfwayThere);
   setTimeout(()=>{
-    if(showTutorialPopup) showHeartOverlay(reveal); else reveal();
+    if(showKeepBuildingPopup) showHeartOverlay(reveal); else reveal();
   }, won?1600:800);
 }
 function finishFree(){
@@ -2546,21 +2555,29 @@ S('btnUseHearts').onclick=e=>{ e.stopPropagation();
   if(progress.hearts<=0) return;
   sndClick(); S('btnUseHearts').classList.remove('show'); useHeartAndResume();
 };
-// The big heart popup — a large heart icon, a square USE HEART button beside it, and a
-// one-line explanation of what a heart actually does — is a one-time tutorial teaching
-// moment only (see finish()'s showTutorialPopup). Every other loss just uses the small
-// inline button above instead.
+// The big "KEEP BUILDING?" popup — a large heart icon, a square action button beside it, and
+// a one-line explanation — fires for the tutorial and for any halfway-or-further loss (see
+// finish()). With hearts in stock the button spends one and resumes immediately; out of
+// hearts, it instead watches an ad to earn one, then resumes automatically — no separate
+// "use heart" tap needed once the ad pays out.
 let heartDeclineAction=null;
 function showHeartOverlay(onDecline){
   heartDeclineAction = onDecline || null;
+  const hasHearts = progress.hearts>0;
+  S('btnHeartContinue').innerHTML = hasHearts ? 'USE<br>HEART' : 'WATCH<br>AD';
+  S('heartExplain').textContent = hasHearts
+    ? 'A heart gives you an extra life — keep building right where you left off.'
+    : 'Watch a quick ad to earn a heart and keep building right where you left off.';
   S('heartOverlay').classList.add('show');
 }
-S('btnHeartContinue').onclick=e=>{ e.stopPropagation();
-  if(progress.hearts<=0) return;
-  sndClick();
+S('btnHeartContinue').onclick=e=>{ e.stopPropagation(); sndClick();
   S('heartOverlay').classList.remove('show');
-  heartDeclineAction=null;
-  useHeartAndResume();
+  const declineFn = heartDeclineAction; heartDeclineAction=null;
+  if(progress.hearts>0){
+    useHeartAndResume();
+  } else {
+    playAdForHeart(()=>useHeartAndResume(), declineFn);
+  }
 };
 S('heartDecline').onclick=e=>{ e.stopPropagation(); sndClick();
   S('heartOverlay').classList.remove('show');
