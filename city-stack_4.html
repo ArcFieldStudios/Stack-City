@@ -176,13 +176,18 @@
   .carousel { text-align:left; margin:16px 2px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); }
   .carousel:first-child { margin-top:0; padding-top:0; border-top:none; }
   .carousel .lab { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.5); margin-bottom:9px; font-weight:600; }
-  .carousel-row { display:flex; align-items:center; gap:10px; }
+  .carousel-row { display:flex; align-items:center; justify-content:center; gap:10px; }
   .carousel-arrow { flex:none; width:38px; height:38px; border-radius:50%; cursor:pointer;
     background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); color:#fff;
     font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center; font-family:inherit; }
   .carousel-arrow:active { background:rgba(255,255,255,.2); transform:scale(.94); }
-  .carousel-preview { position:relative; flex:1; min-width:0; border-radius:14px; overflow:hidden;
-    border:1px solid rgba(255,255,255,.18); background:#1c2a44; aspect-ratio:16/8; }
+  /* A wide 16:8 box suited a landscape scene preview, but stretched an upright block
+     silhouette thin and made the shape/colour pickers feel oversized and empty — each
+     group now gets its own compact, mostly-upright box instead of filling the whole row. */
+  .carousel-preview { position:relative; min-width:0; border-radius:14px; overflow:hidden;
+    border:1px solid rgba(255,255,255,.18); background:#1c2a44; }
+  .carousel-preview.bg { flex:0 1 200px; aspect-ratio:3/4; }
+  .carousel-preview.shape, .carousel-preview.color { flex:0 1 140px; aspect-ratio:1/1; }
   .carousel-preview canvas { width:100%; height:100%; display:block; }
   .carousel-name { margin-top:9px; text-align:center; font-size:11px; letter-spacing:2.5px;
     font-weight:700; color:#ffe08a; }
@@ -2332,7 +2337,9 @@ function drawCarouselPreview(cv, group, key){
   if(group==='bg'){
     const citySc=scenes[key];
     if(citySc){
-      pc.drawImage(citySc,0,0,citySc.width,citySc.height,0,0,w,h);
+      const sw=citySc.width, sh=citySc.height, scale=Math.max(w/sw,h/sh);
+      const dw=sw*scale, dh=sh*scale;
+      pc.drawImage(citySc,0,0,sw,sh,(w-dw)/2,(h-dh)/2,dw,dh);
     } else {
       // the four generic skies aren't cached scene canvases — mirror drawFreeBg()'s own palette
       const g=pc.createLinearGradient(0,0,0,h);
@@ -2348,13 +2355,18 @@ function drawCarouselPreview(cv, group, key){
     }
   } else if(group==='shape'){
     const poly=(FREE_SHAPES[key]||FREE_SHAPES.square)();
-    const sz=Math.min(w,h)*0.64;
-    pc.save(); pc.translate(w/2,h/2);
-    pc.beginPath();
-    poly.forEach((p,i)=>{ const px=p[0]/R0*sz, py=p[1]/R0*sz*0.6; i?pc.lineTo(px,py):pc.moveTo(px,py); });
-    pc.closePath();
-    pc.fillStyle='#ffe08a'; pc.fill();
-    pc.strokeStyle='rgba(0,0,0,.3)'; pc.lineWidth=1.6; pc.stroke();
+    const hgt=R0*0.85;
+    let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for(const q of poly) for(const Y of [0,hgt]){
+      const p=proj(q[0],Y,q[1]);
+      minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+    }
+    const pad=Math.min(w,h)*0.16;
+    const sc=Math.min((w-pad*2)/(maxX-minX||1),(h-pad*2)/(maxY-minY||1));
+    pc.save();
+    pc.translate(w/2-(minX+maxX)/2*sc, h/2-(minY+maxY)/2*sc);
+    pc.scale(sc,sc);
+    drawPrismLite(pc,poly,0,hgt,0);
     pc.restore();
   } else if(group==='color'){
     const r=Math.min(w,h)*0.32;
@@ -2384,7 +2396,7 @@ function buildCarousel(container, group){
   const row=document.createElement('div'); row.className='carousel-row';
   const prevBtn=document.createElement('button'); prevBtn.className='carousel-arrow'; prevBtn.textContent='‹';
   const nextBtn=document.createElement('button'); nextBtn.className='carousel-arrow'; nextBtn.textContent='›';
-  const previewWrap=document.createElement('div'); previewWrap.className='carousel-preview';
+  const previewWrap=document.createElement('div'); previewWrap.className='carousel-preview '+group;
   const cv=document.createElement('canvas');
   previewWrap.appendChild(cv);
   const nameEl=document.createElement('div'); nameEl.className='carousel-name';
