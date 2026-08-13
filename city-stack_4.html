@@ -591,16 +591,24 @@ function cnPlate(t){
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
-  // Elizabeth Tower's real silhouette: the shaft itself barely tapers — a slender, nearly
-  // parallel Portland-stone column, not a stepped skyscraper — then the clock stage (the four
-  // 7m dials sit in stone surrounds that genuinely project past the tower's own walls) FLARES
-  // OUT wider than the shaft directly below it, before the spire steps sharply back in and
-  // tapers to its point. That flare-then-taper is the single most recognisable thing about it
-  // in every real photo, so it's a deliberate jump here, not a smooth blend.
+  const base = 0.60 - 0.05*t;
+  // widen starting a bit below the clock, then hold that wider width steady up through the
+  // clock block itself — a proper platform under the clock, not a bump that flares out and
+  // narrows back down before reaching the top
+  const plateau = t<0.78 ? 0 : Math.min(1,(t-0.78)/0.06);
+  let R = R0*(base + 0.10*plateau);
+  // the continuous formula above still shifts by a fraction of a percent floor to floor even
+  // while "plateaued", so the clock block (N-1) locks onto the exact width of the floor right
+  // below it (N-2) instead of its own very slightly different value at N-1's own t
   const i = Math.round(t*N);
-  if(i===N-1) return nGon(4, R0*0.68, Math.PI/4);   // clock stage — wider than the shaft below it
-  if(i===N)   return nGon(4, R0*0.34, Math.PI/4);   // spire base — steps sharply back in
-  const R = R0*(0.62 - 0.16*t);
+  if(i>=N-1){
+    const t2=(N-2)/N, base2=0.60-0.05*t2, plateau2=t2<0.78?0:Math.min(1,(t2-0.78)/0.06);
+    const Rref = R0*(base2+0.10*plateau2);
+    // the very last floor is the spire's own base, not more clock platform — narrow it down so
+    // the spire visibly steps in and blends out of the clock block instead of just floating on
+    // an ornament stacked on a same-width block
+    R = i===N ? Rref*0.72 : Rref;
+  }
   return nGon(4, R, Math.PI/4);
 }
 /* EMPIRE STATE BUILDING — Art Deco square: wide base, setbacks, tall shaft, crown */
