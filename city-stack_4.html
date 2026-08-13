@@ -597,10 +597,18 @@ function bigBenPlate(t){
   // narrows back down before reaching the top
   const plateau = t<0.78 ? 0 : Math.min(1,(t-0.78)/0.06);
   let R = R0*(base + 0.10*plateau);
-  // the very last floor is the spire's own base, not more clock platform — narrow it down so
-  // the spire visibly steps in and blends out of the clock block instead of just floating on
-  // an ornament stacked on a same-width block
-  if(t>=0.999) R *= 0.72;
+  // the continuous formula above still shifts by a fraction of a percent floor to floor even
+  // while "plateaued", so the clock block (N-1) locks onto the exact width of the floor right
+  // below it (N-2) instead of its own very slightly different value at N-1's own t
+  const i = Math.round(t*N);
+  if(i>=N-1){
+    const t2=(N-2)/N, base2=0.60-0.05*t2, plateau2=t2<0.78?0:Math.min(1,(t2-0.78)/0.06);
+    const Rref = R0*(base2+0.10*plateau2);
+    // the very last floor is the spire's own base, not more clock platform — narrow it down so
+    // the spire visibly steps in and blends out of the clock block instead of just floating on
+    // an ornament stacked on a same-width block
+    R = i===N ? Rref*0.72 : Rref;
+  }
   return nGon(4, R, Math.PI/4);
 }
 /* EMPIRE STATE BUILDING — Art Deco square: wide base, setbacks, tall shaft, crown */
