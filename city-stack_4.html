@@ -1339,6 +1339,28 @@ function buildScene(key){
     c.fillStyle=wat; c.fillRect(0,horizon+2,W,H-horizon);
     c.fillStyle='rgba(255,255,255,.3)';
     for(let i=0;i<50;i++){ const y=horizon+6+Math.random()*(H-horizon-8); c.fillRect(Math.random()*W,y,16+Math.random()*26,1.4); }
+
+    // Statue of Liberty — small on her own island out in the harbor, in front of the skyline,
+    // drawn after the water so her island sits on top of it like a real one would
+    { const lx=W*.055, lbase=horizon+18*u, k=1.3;
+      c.fillStyle='#425073'; c.beginPath(); c.ellipse(lx,lbase,26*u*k,9*u*k,0,0,Math.PI); c.fill();
+      const pw=13*u*k, ph=24*u*k, pTop=lbase-ph;
+      c.fillStyle='#4a5570';
+      c.beginPath(); c.moveTo(lx-pw*0.55,lbase); c.lineTo(lx-pw*0.42,pTop); c.lineTo(lx+pw*0.42,pTop); c.lineTo(lx+pw*0.55,lbase); c.closePath(); c.fill();
+      const sh=44*u*k, sTop=pTop-sh, sw=9*u*k, headR=4.6*u*k, headY=sTop-headR*0.7;
+      c.fillStyle='#4f8577'; // oxidised copper green
+      c.beginPath(); c.moveTo(lx-sw*0.55,pTop); c.lineTo(lx-sw*0.30,sTop); c.lineTo(lx+sw*0.30,sTop); c.lineTo(lx+sw*0.55,pTop); c.closePath(); c.fill();
+      c.beginPath(); c.arc(lx,headY,headR,0,7); c.fill();
+      for(let j=-3;j<=3;j++){ const ang=-Math.PI/2+j*0.30;
+        c.beginPath(); c.moveTo(lx,headY);
+        c.lineTo(lx+Math.cos(ang)*headR*2.1, headY+Math.sin(ang)*headR*2.1-headR*0.4);
+        c.lineTo(lx+Math.cos(ang)*headR*0.6, headY+Math.sin(ang)*headR*0.6);
+        c.closePath(); c.fill(); }
+      c.strokeStyle='#4f8577'; c.lineWidth=Math.max(2.2*u*k,1.8);
+      c.beginPath(); c.moveTo(lx+sw*0.32,sTop+headR*1.4); c.lineTo(lx+sw*1.7,sTop-headR*1.6); c.stroke();
+      c.fillStyle='rgba(255,225,140,.5)'; c.beginPath(); c.arc(lx+sw*1.7,sTop-headR*2.0,4.5*u*k,0,7); c.fill();
+      c.fillStyle='#e8c15a'; c.beginPath(); c.arc(lx+sw*1.7,sTop-headR*2.0,2.5*u*k,0,7); c.fill();
+    }
   }
 
   else if(key==='nycwtc'){
