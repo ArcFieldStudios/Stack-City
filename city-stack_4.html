@@ -556,11 +556,7 @@ function burjPlate(t){
 }
 /* ONE WORLD TRADE — square -> octagon -> square rotated 45 */
 function wtcPlate(t){
-  let R = R0*1.02*(1-0.16*t);
-  // the parapet used to be a flat sticker floating on top of this still-fairly-wide shape —
-  // now the real top floors keep narrowing into it, so the mast rises out of an actually
-  // narrow point instead of a mismatched wide cap
-  if(t>0.85){ const k=(t-0.85)/0.15; R *= (1-0.58*k); }
+  const R = R0*1.02*(1-0.16*t);
   const B=[], T=[];
   for(let k=0;k<4;k++){
     const ab=Math.PI/4+k*Math.PI/2, at=k*Math.PI/2;
@@ -595,12 +591,15 @@ function cnPlate(t){
 }
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
-  // one continuous taper all the way up — no widening plateau under the clock block, so it
-  // comes out the exact same width as the ordinary shaft floor right below it, same as every
-  // other pair of adjacent floors
-  let R = R0*(0.60 - 0.05*t);
-  // the very last floor is the spire's own base, not more shaft — narrow it down so the spire
-  // visibly steps in and blends out of the clock block instead of floating on a same-width cap
+  const base = 0.60 - 0.05*t;
+  // widen starting a bit below the clock, then hold that wider width steady up through the
+  // clock block itself — a proper platform under the clock, not a bump that flares out and
+  // narrows back down before reaching the top
+  const plateau = t<0.78 ? 0 : Math.min(1,(t-0.78)/0.06);
+  let R = R0*(base + 0.10*plateau);
+  // the very last floor is the spire's own base, not more clock platform — narrow it down so
+  // the spire visibly steps in and blends out of the clock block instead of just floating on
+  // an ornament stacked on a same-width block
   if(t>=0.999) R *= 0.72;
   return nGon(4, R, Math.PI/4);
 }
@@ -1901,7 +1900,7 @@ function drawCrown(c,p,t,k,ghost,tiny){
     c.fillStyle=dc||dark; c.beginPath(); c.moveTo(X,bY); c.lineTo(X,tY); c.lineTo(X+tW,tY); c.lineTo(X+bW,bY); c.closePath(); c.fill();
   };
   // small solid cap block terminating a mast/spire — an actual block, not a line-end
-  const cap=(w,h2,yTop)=>{ c.fillStyle=fill; c.fillRect(X-w,yTop-h2,w*2,h2); c.fillStyle=dark; c.fillRect(X,yTop-h2,w,h2); };
+  const cap=(w,h2,yTop,fc,dc)=>{ c.fillStyle=fc||fill; c.fillRect(X-w,yTop-h2,w*2,h2); c.fillStyle=dc||dark; c.fillRect(X,yTop-h2,w,h2); };
 
   if(crown==='needle'){              // Burj Khalifa — a real spire is a thin steel mast, not a
                                            // wide cone: it tapers hard in the first ~15% (the roof-level
@@ -1931,19 +1930,22 @@ function drawCrown(c,p,t,k,ghost,tiny){
     post(U*0.020,U*0.012, Y-H*0.45, Y-H*0.80, spireFill,spireDark, U*0.008,U*0.004);
     post(U*0.012,U*0.0012,Y-H*0.80, Y-H,      spireFill,spireDark, U*0.004,0);
   }
-  else if(crown==='antenna'){             // One World Trade — the parapet is now real, narrowing
-                                           // floors (see wtcPlate), so this just rises straight
-                                           // into the spire mast + cap
-    post(U*0.035,U*0.010,Y,Y-H*0.90);
+  else if(crown==='antenna'){             // One World Trade — solid parapet + mast + cap block
+    c.fillStyle=fill; c.fillRect(X-U*0.13,Y-U*0.11,U*0.26,U*0.11);
+    c.fillStyle=dark; c.fillRect(X+U*0.005,Y-U*0.11,U*0.125,U*0.11);
+    post(U*0.035,U*0.010,Y-U*0.09,Y-H*0.90);
     cap(U*0.013,H*0.045,Y-H);
   }
-  else if(crown==='mast'){                // Milad / CN — the tower's own plate already tapers
-                                           // to a narrow point by the last real floor, so the
-                                           // mast just continues straight out of it instead of
-                                           // a separate wide base sticker underneath
-    post(U*0.055,U*0.009,Y,Y-H*0.90);
-    c.fillStyle=fill; [0.42,0.64,0.84].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*(0.05-f*0.025),U*0.017,0,0,7); c.fill(); });
-    cap(U*0.011,H*0.045,Y-H);
+  else if(crown==='mast'){                // Milad / CN — the mast is the tower's own structure
+                                           // continuing up to its antenna tip, not a separately
+                                           // tinted metal cap, so (like Big Ben's clock stage) it
+                                           // uses the tower's own unclamped colour instead of the
+                                           // shared crown metal tone
+    const bodyFill = ghost?fill:css({h:bc.h,s:bc.s,l:bc.l},9,.98);
+    const bodyDark = ghost?dark:css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
+    post(U*0.055,U*0.009,Y,Y-H*0.90,bodyFill,bodyDark);
+    c.fillStyle=bodyFill; [0.42,0.64,0.84].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*(0.05-f*0.025),U*0.017,0,0,7); c.fill(); });
+    cap(U*0.011,H*0.045,Y-H,bodyFill,bodyDark);
   }
   else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — the clock stage is now
                                            // a real block of its own (isClockBlockIdx, drawn via
@@ -1995,19 +1997,27 @@ function drawCrown(c,p,t,k,ghost,tiny){
     c.moveTo(X,Y); c.quadraticCurveTo(X+U*0.05,Y-H*0.78, X+U*0.11,Y-H*0.64);
     c.quadraticCurveTo(X+U*0.38,Y-H*0.16, X+U*0.40,Y); c.closePath(); c.fill();
   }
-  else if(crown==='pinnacle'){            // Petronas — the tower's own setback floors (see
-                                           // petronasPlate) already narrow it down for real by
-                                           // the last floor, so these rings taper further from
-                                           // that already-narrow point instead of flaring back
-                                           // out to a wider sticker first
-    let yy=Y; const rings=[0.16,0.135,0.11,0.088];
+  else if(crown==='pinnacle'){            // Petronas — the pinnacle is the tower's own structure
+                                           // tapering to its tip, not a separately tinted metal
+                                           // cap, so (like Big Ben's clock stage and the Milad/CN
+                                           // mast) it uses the tower's own unclamped colour.
+                                           // The tower's own setback floors (see petronasPlate)
+                                           // already narrow it down for real by the last floor;
+                                           // these rings keep thinning further from there, ring
+                                           // to ring, with no jump where they hand off to the
+                                           // post — the post's own base picks up exactly where
+                                           // the last ring left off, then keeps narrowing in a
+                                           // single continuous line up to the cap
+    const bodyFill = ghost?fill:css({h:bc.h,s:bc.s,l:bc.l},9,.98);
+    const bodyDark = ghost?dark:css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
+    let yy=Y; const rings=[0.16,0.125,0.095,0.070];
     for(const r of rings){
-      c.fillStyle=fill; c.beginPath(); c.ellipse(X,yy,U*r,U*r*0.42,0,0,7); c.fill();
-      c.fillStyle=dark; c.beginPath(); c.ellipse(X,yy+U*r*0.10,U*r,U*r*0.2,0,0,Math.PI); c.fill();
+      c.fillStyle=bodyFill; c.beginPath(); c.ellipse(X,yy,U*r,U*r*0.42,0,0,7); c.fill();
+      c.fillStyle=bodyDark; c.beginPath(); c.ellipse(X,yy+U*r*0.10,U*r,U*r*0.2,0,0,Math.PI); c.fill();
       yy-=H*0.095; }
-    post(U*0.045,U*0.010,yy,Y-H*0.93);
-    c.fillStyle=fill; [1,2,3].forEach(i=>{ const f=0.62-i*0.06; c.beginPath(); c.ellipse(X,Y-H*f,U*(0.028-i*0.005),U*0.012,0,0,7); c.fill(); });
-    cap(U*0.009,H*0.03,Y-H);
+    post(U*0.070,U*0.010,yy,Y-H*0.93,bodyFill,bodyDark);
+    c.fillStyle=bodyFill; [1,2,3].forEach(i=>{ const f=0.62-i*0.06; c.beginPath(); c.ellipse(X,Y-H*f,U*(0.028-i*0.005),U*0.012,0,0,7); c.fill(); });
+    cap(U*0.009,H*0.03,Y-H,bodyFill,bodyDark);
   }
   c.restore();
 }
