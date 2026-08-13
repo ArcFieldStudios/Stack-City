@@ -214,6 +214,15 @@
   .screen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; pointer-events:none; opacity:0; transition:opacity .5s; padding:0 18px calc(18px + env(safe-area-inset-bottom)); z-index:20; }
   .screen.visible { opacity:1; }
+  /* Buttons inside a screen opt into pointer-events:auto individually (see .no-tap /
+     res-menu-btn / #btnIntroStart) so the screen itself can stay tap-anywhere. But that
+     opt-in isn't gated by the screen's own .visible state — every .screen sits stacked
+     "inset:0" over the live gameplay canvas at all times, just invisible via opacity, so
+     without this rule those buttons stayed real, invisible hit targets over the game the
+     whole time (e.g. a normal placement tap landing on the hidden #btnIntroStart silently
+     reset the level; one landing on the hidden #btnResMainMenu silently bounced to the
+     menu) — this was the "tap a block and it randomly resets / kicks to menu" bug. */
+  .screen:not(.visible) * { pointer-events:none !important; }
 
   #splashScreen { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center;
     background:#0f1420;
@@ -766,7 +775,7 @@ function admob(){
   const cap=window.Capacitor;
   return (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.AdMob) || null;
 }
-let admobRewardReady=false;
+let admobRewardReady=false, admobAdInFlight=false;
 function admobLoadRewarded(){
   const AdMob=admob(); if(!AdMob) return;
   admobRewardReady=false;
@@ -777,19 +786,35 @@ function admobLoadRewarded(){
 (function initAdMob(){
   const AdMob=admob(); if(!AdMob) return;
   AdMob.initialize({ initializeForTesting:true }).then(admobLoadRewarded).catch(()=>{});
+  // The underlying plugin only resolves showRewardVideoAd()'s promise when the reward is
+  // actually earned — if the player closes the ad early (very common, e.g. once the skip
+  // button appears) neither .then() nor .catch() ever fires, so admobAdInFlight/
+  // admobRewardReady would stay stuck forever and every later tap would silently fall
+  // through to the fallback countdown overlay instead of a real ad ("shows another one").
+  // These events fire on every ad close regardless of reward outcome, so they're the only
+  // reliable place to recover that stuck state.
+  if(AdMob.addListener){
+    AdMob.addListener('onRewardedVideoAdDismissed', ()=>{
+      if(admobAdInFlight){ admobAdInFlight=false; admobLoadRewarded(); }
+    });
+    AdMob.addListener('onRewardedVideoAdFailedToShow', ()=>{
+      if(admobAdInFlight){ admobAdInFlight=false; toast('AD FAILED — TRY AGAIN'); admobLoadRewarded(); }
+    });
+  }
 })();
 
 function playAdForHeart(cb){
   if(progress.hearts>=MAX_HEARTS){ toast('HEARTS ALREADY FULL'); return; }
   const AdMob=admob();
-  if(AdMob && admobRewardReady){
-    admobRewardReady=false;
+  if(AdMob && admobRewardReady && !admobAdInFlight){
+    admobRewardReady=false; admobAdInFlight=true;
     AdMob.showRewardVideoAd()
       .then(()=>{ grantHeart(); toast('+1 HEART ♥'); if(cb) cb(); })
       .catch(()=>{ toast('AD FAILED — TRY AGAIN'); })
-      .finally(admobLoadRewarded);
+      .finally(()=>{ admobAdInFlight=false; admobLoadRewarded(); });
     return;
   }
+  if(AdMob && admobAdInFlight){ return; } // an ad is already showing — ignore the extra tap instead of stacking another
   const overlay=S('adOverlay'); const timerEl=S('adTimer'); const btn=S('adSkip');
   let sec=5; timerEl.textContent=sec; btn.disabled=true; btn.textContent='WATCHING…';
   overlay.classList.add('show');
