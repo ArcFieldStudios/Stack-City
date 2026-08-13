@@ -1284,7 +1284,7 @@ function buildScene(key){
     const sky=c.createLinearGradient(0,0,0,horizon);
     sky.addColorStop(0,'#2a2f6a'); sky.addColorStop(.45,'#8a5a92'); sky.addColorStop(.8,'#e08a5c'); sky.addColorStop(1,'#f2c07a');
     c.fillStyle=sky; c.fillRect(0,0,W,horizon);
-    c.fillStyle='rgba(255,230,190,.9)'; c.beginPath(); c.arc(W*.30,horizon*.7,18,0,7); c.fill();
+    c.fillStyle='rgba(255,230,190,.9)'; c.beginPath(); c.arc(W*.30,horizon*.5,18,0,7); c.fill();
     c.fillStyle='rgba(255,255,255,.7)';
     for(let i=0;i<50;i++) c.fillRect((i*127%W),(i*41%(horizon*0.4)),1.4,1.4);
     // dense financial-district skyline (dark against dusk)
