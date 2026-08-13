@@ -592,11 +592,15 @@ function cnPlate(t){
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
   const base = 0.60 - 0.05*t;
-  // widen starting a bit below the clock, then hold that wider width steady all the way up
-  // to where the crown sits — a proper platform under the clock stage, not a bump that
-  // flares out and narrows back down before reaching the top
+  // widen starting a bit below the clock, then hold that wider width steady up through the
+  // clock block itself — a proper platform under the clock, not a bump that flares out and
+  // narrows back down before reaching the top
   const plateau = t<0.78 ? 0 : Math.min(1,(t-0.78)/0.06);
-  const R = R0*(base + 0.10*plateau);
+  let R = R0*(base + 0.10*plateau);
+  // the very last floor is the spire's own base, not more clock platform — narrow it down so
+  // the spire visibly steps in and blends out of the clock block instead of just floating on
+  // an ornament stacked on a same-width block
+  if(t>=0.999) R *= 0.72;
   return nGon(4, R, Math.PI/4);
 }
 /* EMPIRE STATE BUILDING — Art Deco square: wide base, setbacks, tall shaft, crown */
@@ -855,6 +859,14 @@ function computeCenter(){
 }
 const PERFECT_TOL=5;
 const isSpireIdx=i=> !isFree && i>=N;
+// Big Ben's clock stage is a real, separately-placed block (not part of the crown ornament)
+// so it's an actual rotating prism like every other floor instead of a flat 2D drawing that
+// stood still while the rest of the tower spun in the level-select preview. It's given extra
+// height so its faces are roughly square — a single normal floor's height would leave the
+// clock face decal squashed into a thin horizontal sliver.
+const CLOCK_BLOCK_MULT=4.6;
+const isClockBlockIdx=i=> !isFree && L().crown==='gothic' && i===N-1;
+const blockHeightAt=i=> isClockBlockIdx(i) ? FH()*CLOCK_BLOCK_MULT : FH();
 
 /* ==================== AUDIO ==================== */
 let AC=null;
@@ -1808,6 +1820,40 @@ function drawPrismLite(c,poly,y,h,colIdx){
   c.closePath(); c.fillStyle=css(col,11); c.fill();
 }
 
+// Big Ben's clock face, painted directly onto a block's own visible side faces instead of as
+// a fixed 2D ornament — proj() is a linear (parallel, not perspective) projection, so a flat
+// face's rectangle always projects to an exact parallelogram; c.transform() maps a plain
+// 0..1 unit square onto that parallelogram (b1=origin, b2-b1=x-axis, t1-b1=y-axis), so
+// everything drawn afterwards in "unit face space" comes out with the exact real skew of that
+// face — which is what makes it rotate correctly along with the block in the spin preview.
+function drawClockDecal(c,b1,b2,t1){
+  c.save();
+  c.transform(b2.x-b1.x, b2.y-b1.y, t1.x-b1.x, t1.y-b1.y, b1.x, b1.y);
+  const cx=0.5, cy=0.5, rx=0.30, ry=0.30;
+  c.fillStyle='#f3ead0'; c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,7); c.fill();
+  c.fillStyle='#f2b921'; c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,7); c.ellipse(cx,cy,rx*0.86,ry*0.86,0,0,7,true); c.fill();
+  c.fillStyle='#141210';
+  for(let hr=0; hr<12; hr++){ const ang=hr/12*2*Math.PI-Math.PI/2;
+    c.beginPath(); c.ellipse(cx+Math.cos(ang)*rx*0.72, cy+Math.sin(ang)*ry*0.72, rx*(hr%3===0?0.075:0.045), ry*(hr%3===0?0.075:0.045), 0,0,7); c.fill(); }
+  c.save(); c.translate(cx,cy);
+  c.fillRect(-rx*0.05,-ry*0.52,rx*0.10,ry*0.54);
+  c.rotate(2.05); c.fillRect(-rx*0.06,-ry*0.38,rx*0.12,ry*0.40);
+  c.restore();
+  c.restore();
+}
+function drawClockFaces(c,poly,y,h){
+  if(!poly||poly.length<3) return;
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i], b=poly[(i+1)%poly.length];
+    const ex=b[0]-a[0], ez=b[1]-a[1], len=Math.hypot(ex,ez);
+    if(len<0.01) continue;
+    const nx=ez/len, nz=-ex/len;
+    if(nx+nz<=0.001) continue; // same back-face test as drawPrismLite — only paint faces the camera can see
+    const t1=proj(a[0],y+h,a[1]), b1=proj(a[0],y,a[1]), b2=proj(b[0],y,b[1]);
+    drawClockDecal(c,b1,b2,t1);
+  }
+}
+
 /* ==================== CROWNS / SPIRE ==================== */
 function anchorOf(b){ const ct=polyCentroid(b.poly); return proj(ct[0], b.y+b.h, ct[1]); }
 const CROWN_H={ needle:180, antenna:150, mast:150, gothic:145, deco:140, domecap:50, pinnacle:140, none:0 };
@@ -1877,92 +1923,32 @@ function drawCrown(c,p,t,k,ghost,tiny){
     c.fillStyle=fill; [0.42,0.64,0.84].forEach(f=>{ c.beginPath(); c.ellipse(X,Y-H*f,U*(0.05-f*0.025),U*0.017,0,0,7); c.fill(); });
     cap(U*0.011,H*0.045,Y-H);
   }
-  else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — clock stage on gothic-arch
-                                           // louvres with corner pinnacles, a gilded collar, a
-                                           // louvred belfry with its own pinnacles, a lantern collar,
-                                           // then a tall, steeply pointed spire with gilded ridge
-                                           // lines and a ball-and-cross finial — proportioned against
-                                           // real photos instead of the old single stubby cone
-    // Unlike every other crown, Big Ben's clock stage and belfry aren't a distinct metal/glass
-    // cap — they're stonework, the same material as the shaft itself, so they use the tower's
-    // own unclamped block colour (matching the actual top floor exactly) instead of the shared
-    // capL/capS crown palette. Only the applied ornament (collars, pinnacle tips, ridge lines,
-    // finial) is gold, and all of that gold is a single, richer, consistent shade.
+  else if(crown==='gothic'){              // Big Ben (Elizabeth Tower) — the clock stage is now
+                                           // a real block of its own (isClockBlockIdx, drawn via
+                                           // drawClockFaces on the block right below this one),
+                                           // so all this crown draws is the roof it blends out
+                                           // of: a tall, steeply pointed spire with gilded ridge
+                                           // lines and a ball-and-cross finial, sitting directly
+                                           // on the clock block with no ornament of its own
+                                           // in between.
     const bodyFill = ghost?fill:css({h:bc.h,s:bc.s,l:bc.l},9,.98);
     const bodyDark = ghost?dark:css({h:bc.h,s:bc.s,l:bc.l},-20,.98);
-    const archAt=(ax,ay,aw,ah,col)=>{ c.fillStyle=col;
-      c.beginPath(); c.moveTo(ax-aw/2,ay); c.lineTo(ax-aw/2,ay-ah*0.55); c.lineTo(ax,ay-ah); c.lineTo(ax+aw/2,ay-ah*0.55); c.lineTo(ax+aw/2,ay); c.closePath(); c.fill(); };
-    const pinnacleAt=(px,py,pw,ph)=>{ c.fillStyle=bodyFill; c.fillRect(px-pw/2,py-ph*0.6,pw,ph*0.6);
-      c.beginPath(); c.moveTo(px-pw*0.6,py-ph*0.6); c.lineTo(px,py-ph); c.lineTo(px+pw*0.6,py-ph*0.6); c.closePath(); c.fill();
-      c.fillStyle= ghost?fill:'#f2b921'; c.beginPath(); c.arc(px,py-ph-U*0.006,U*0.009,0,7); c.fill(); };
-    const gold= ghost?fill:'#f2b921', darkCol= ghost?'rgba(20,40,55,.55)':'rgba(0,0,0,.32)';
-
-    // clock stage — a single, clearly bounded block sitting square on top of the shaft,
-    // outlined so it visually reads as its own tier rather than blending into the stonework
-    // below it
-    const bw=U*0.28, bh=U*0.56, bTop=Y-bh;
-    c.fillStyle=bodyFill; c.fillRect(X-bw,bTop,bw*2,bh);
-    c.fillStyle=bodyDark; c.fillRect(X,bTop,bw,bh);
-    c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=Math.max(U*0.006,0.7);
-    c.strokeRect(X-bw,bTop,bw*2,bh);
-    if(!tiny){ archAt(X-bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); archAt(X+bw*0.55,bTop+bh*0.98,bw*0.30,bh*0.24,darkCol); }
-    [-1,1].forEach(side=>pinnacleAt(X+side*bw*0.90,bTop,bw*0.30,bh*0.30));
-
-    const cy=bTop+bh*0.42, cr=bw*0.62;
-    if(tiny){
-      c.fillStyle= ghost?'rgba(230,248,255,.85)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
-      c.strokeStyle= ghost?'rgba(120,205,235,.9)':gold; c.lineWidth=Math.max(cr*0.11,0.6);
-      c.beginPath(); c.arc(X,cy,cr*0.88,0,7); c.stroke();
-    } else {
-      c.fillStyle= ghost?'rgba(230,248,255,.9)':'#f3ead0'; c.beginPath(); c.arc(X,cy,cr,0,7); c.fill();
-      // gilded rim around the dial — Big Ben's clock faces are famously gold-framed, not stone
-      c.fillStyle= ghost?'rgba(70,130,160,.9)':gold; c.beginPath(); c.arc(X,cy,cr,0,7); c.arc(X,cy,cr*0.87,0,7,true); c.fill();
-      // twelve black tick marks around the dial, plus bold black hands — the one place the
-      // real tower reads as sharp black-on-cream rather than stone-on-stone
-      c.fillStyle= ghost?'rgba(20,50,70,.95)':'#141210';
-      for(let hr=0; hr<12; hr++){ const a=hr/12*2*Math.PI-Math.PI/2;
-        c.beginPath(); c.arc(X+Math.cos(a)*cr*0.74,cy+Math.sin(a)*cr*0.74,cr*(hr%3===0?0.075:0.04),0,7); c.fill(); }
-      c.save(); c.translate(X,cy);
-      c.fillRect(-cr*0.055,-cr*0.58,cr*0.11,cr*0.60);
-      c.rotate(2.05); c.fillRect(-cr*0.065,-cr*0.42,cr*0.13,cr*0.44);
-      c.restore();
-    }
-
-    // gilded cresting collar separating the clock stage from the belfry
-    const collar1H=H*0.030;
-    c.fillStyle=gold; c.fillRect(X-bw*1.02,bTop-collar1H,bw*2.04,collar1H);
-    c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=Math.max(U*0.004,0.5); c.strokeRect(X-bw*1.02,bTop-collar1H,bw*2.04,collar1H);
-
-    // belfry — the louvred bell stage. Held to the exact same width as the clock stage below
-    // it (real photos: it doesn't step inward at all here), with its own pinnacles and a
-    // black outline so it reads as its own distinct block too
-    const belH=H*0.22, bbw=bw, belTop=bTop-collar1H-belH;
-    c.fillStyle=bodyFill; c.fillRect(X-bbw,belTop,bbw*2,belH);
-    c.fillStyle=bodyDark; c.fillRect(X,belTop,bbw,belH);
-    c.strokeStyle='rgba(0,0,0,.5)'; c.lineWidth=Math.max(U*0.006,0.7);
-    c.strokeRect(X-bbw,belTop,bbw*2,belH);
-    if(!tiny){ archAt(X-bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); archAt(X+bbw*0.5,belTop+belH*0.92,bbw*0.55,belH*0.6,darkCol); }
-    const pin2H=belH*0.40;
-    [-1,1].forEach(side=>pinnacleAt(X+side*bbw*0.86,belTop,bbw*0.40,pin2H));
-
-    // lantern collar — a thin balustrade ledge where the roof structure begins
-    const collar2H=H*0.02, spireBase=belTop-pin2H*0.15-collar2H;
-    c.fillStyle=gold; c.fillRect(X-bbw*1.15,spireBase,bbw*2.30,collar2H);
+    const gold= ghost?fill:'#f2b921';
 
     // tall, steeply pointed spire tapering to a thin mast, with gilded ridge lines along its
-    // visible edges — set in noticeably from the belfry's own width rather than nearly flush
-    // with it, echoing the real roof stepping inward before the spire begins
-    const spH=H*0.46, spBaseW=bbw*0.60;
-    c.fillStyle=bodyFill; c.beginPath(); c.moveTo(X-spBaseW,spireBase); c.lineTo(X-spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW,spireBase); c.closePath(); c.fill();
-    c.fillStyle=bodyDark; c.beginPath(); c.moveTo(X,spireBase); c.lineTo(X,spireBase-spH*0.82); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.lineTo(X+spBaseW,spireBase); c.closePath(); c.fill();
+    // visible edges — set in from the block underneath rather than flush with it, so it
+    // reads as stepping in and blending out of the clock block instead of just floating
+    const spH=H*0.85, spBaseW=U*0.24;
+    c.fillStyle=bodyFill; c.beginPath(); c.moveTo(X-spBaseW,Y); c.lineTo(X-spBaseW*0.05,Y-spH*0.82); c.lineTo(X+spBaseW*0.05,Y-spH*0.82); c.lineTo(X+spBaseW,Y); c.closePath(); c.fill();
+    c.fillStyle=bodyDark; c.beginPath(); c.moveTo(X,Y); c.lineTo(X,Y-spH*0.82); c.lineTo(X+spBaseW*0.05,Y-spH*0.82); c.lineTo(X+spBaseW,Y); c.closePath(); c.fill();
     c.strokeStyle=gold; c.lineWidth=Math.max(U*0.006,0.6);
-    c.beginPath(); c.moveTo(X-spBaseW,spireBase); c.lineTo(X-spBaseW*0.05,spireBase-spH*0.82); c.stroke();
-    c.beginPath(); c.moveTo(X+spBaseW,spireBase); c.lineTo(X+spBaseW*0.05,spireBase-spH*0.82); c.stroke();
-    post(U*0.010,U*0.006,spireBase-spH*0.80,spireBase-spH);
-    cap(U*0.008,H*0.025,spireBase-spH);
+    c.beginPath(); c.moveTo(X-spBaseW,Y); c.lineTo(X-spBaseW*0.05,Y-spH*0.82); c.stroke();
+    c.beginPath(); c.moveTo(X+spBaseW,Y); c.lineTo(X+spBaseW*0.05,Y-spH*0.82); c.stroke();
+    post(U*0.010,U*0.006,Y-spH*0.80,Y-spH);
+    cap(U*0.008,H*0.025,Y-spH);
 
     // finial — a gilded ball with a thin cross above it
-    const finY=spireBase-spH-U*0.010;
+    const finY=Y-spH-U*0.010;
     c.fillStyle=gold; c.beginPath(); c.arc(X,finY,U*0.016,0,7); c.fill();
     c.strokeStyle=gold; c.lineWidth=Math.max(U*0.007,0.7);
     c.beginPath(); c.moveTo(X,finY-U*0.016); c.lineTo(X,finY-U*0.055); c.stroke();
@@ -2010,13 +1996,16 @@ function drawBlock(c,b,lite,crownK,settled){
   // building (The Shard) would show it as a redundant extra block once settled into the stack.
   const skip = settled && b.isSpire && L().crown==='none';
   if(!skip){ if(lite) drawPrismLite(c,b.poly,b.y,b.h,b.i); else drawPrism(c,b.poly,b.y,b.h,b.i); }
+  if(b.isClockBlock) drawClockFaces(c,b.poly,b.y,b.h);
   if(b.isSpire) drawCrown(c, anchorOf(b), 1, crownK||1, false);
 }
 
 /* ==================== IDEAL TOWER ==================== */
 function idealBlocks(){
-  const arr=[];
-  for(let i=0;i<=N;i++) arr.push({poly:plateAt(i), y:i*FH(), h:FH(), i:i, isSpire:isSpireIdx(i)});
+  const arr=[]; let y=0;
+  for(let i=0;i<=N;i++){ const h=blockHeightAt(i);
+    arr.push({poly:plateAt(i), y, h, i:i, isSpire:isSpireIdx(i), isClockBlock:isClockBlockIdx(i)});
+    y+=h; }
   return arr;
 }
 
@@ -2078,11 +2067,11 @@ function spawnMover(){
     speed = 4.4 + Math.min(i*0.11,10);
   }
   const off = 340;
-  mover={ i:i, axis:axis, dir:1, speed:speed, y:top.y+top.h, h:FH(), icx:ic[0], icz:ic[1],
+  mover={ i:i, axis:axis, dir:1, speed:speed, y:top.y+top.h, h:blockHeightAt(i), icx:ic[0], icz:ic[1],
     win, basePoly,
     x: axis==='x' ? ic[0]-off : ic[0],
     z: axis==='z' ? ic[1]-off : ic[1],
-    isSpire:isSpireIdx(i) };
+    isSpire:isSpireIdx(i), isClockBlock:isClockBlockIdx(i) };
   refreshMover();
 }
 function refreshMover(){ mover.poly = translate(mover.basePoly, mover.x-mover.icx, mover.z-mover.icz); }
@@ -2131,7 +2120,7 @@ function place(){
     sndSlice(); sndPlace(); shakeT=.13; haptic('medium');
   }
 
-  stack.push({poly:survivor, cx:ncx, cz:ncz, y:mover.y, h:mover.h, i:mover.i, isSpire:mover.isSpire});
+  stack.push({poly:survivor, cx:ncx, cz:ncz, y:mover.y, h:mover.h, i:mover.i, isSpire:mover.isSpire, isClockBlock:mover.isClockBlock});
   score++; camTarget = mover.y - H*0.16; updateHUD(); tutorCheck();
   if(mover.isSpire){ finish(true); return; }
   spawnMover();
@@ -2190,6 +2179,7 @@ function renderTower(cv,blocks,withCrown){
   c.scale(sc,sc);
   for(const b of blocks){
     if(!(b.isSpire && L().crown==='none')) drawPrismLite(c,b.poly,b.y,b.h,b.i);
+    if(b.isClockBlock) drawClockFaces(c,b.poly,b.y,b.h);
     if(b.isSpire) drawCrown(c, anchorOf(b), 1, 1, false, true);
   }
   c.restore();
@@ -2220,6 +2210,7 @@ function renderTowerSpin(cv,blocks,angle){
   for(const b of blocks){
     const rp=b.poly.map(q=>[q[0]*cosA-q[1]*sinA, q[0]*sinA+q[1]*cosA]);
     if(!(b.isSpire && L().crown==='none')) drawPrismLite(c,rp,b.y,b.h,b.i);
+    if(b.isClockBlock) drawClockFaces(c,rp,b.y,b.h);
     if(b.isSpire){ const ct=polyCentroid(rp); drawCrown(c, proj(ct[0],b.y+b.h,ct[1]), 1, 1, false, true); }
   }
   c.restore();
