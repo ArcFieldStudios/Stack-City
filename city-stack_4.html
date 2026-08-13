@@ -237,6 +237,19 @@
   .tap-hint { margin-top:5vh; font-size:12px; letter-spacing:6px; color:#fff; font-weight:600;
     animation:pulse 1.7s ease-in-out infinite; text-shadow:0 2px 10px rgba(0,0,0,.45); }
   @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+  /* The level-intro preview: a big spinning render of the target tower sits between the
+     title and the START button, over the level's own background scene (already drawn by
+     the main canvas underneath — this screen has no opaque background of its own). */
+  #introScreen { padding-top:calc(9vh + env(safe-area-inset-top)); }
+  #introSpinCv { position:absolute; left:50%; top:54%; transform:translate(-50%,-50%);
+    width:min(82vw,460px); height:50vh; pointer-events:none; }
+  #introScreen .eyebrow, #introScreen .title, #introScreen .subtitle, #introScreen .dots { position:relative; }
+  #btnIntroStart { position:relative; pointer-events:auto; cursor:pointer;
+    margin-top:auto; margin-bottom:2vh; width:min(240px,62vw); padding:16px 0;
+    border-radius:999px; background:#ffe08a; color:#1b2338; border:none;
+    font-size:14px; letter-spacing:6px; font-weight:700; font-family:inherit;
+    box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  #btnIntroStart:active { transform:scale(.97); }
   .dots { margin-top:20px; display:flex; gap:10px; }
   .dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.35); }
   .dot.done { background:#ffe08a; }
@@ -384,11 +397,12 @@
 </div>
 
 <div class="screen" id="introScreen">
+  <canvas id="introSpinCv"></canvas>
   <div class="eyebrow" id="introEyebrow">LEVEL 1</div>
   <div class="title" id="introTitle">THE SHARD</div>
   <div class="subtitle" id="introSub">LONDON &middot; 40 FLOORS &middot; 309.6 M</div>
   <div class="dots" id="introDots"></div>
-  <div class="tap-hint">TAP TO BUILD</div>
+  <button class="no-tap" id="btnIntroStart">START</button>
 </div>
 
 <div class="screen" id="resultScreen">
@@ -894,7 +908,7 @@ function haptic(kind){
 let state='menu', paused=false, started=false;
 let stack=[], mover=null, debris=[], sparks=[];
 let score=0,perfects=0,combo=0,totalPerfects=0;
-let camY=0,camTarget=0,shakeT=0,holoFade=1;
+let camY=0,camTarget=0,shakeT=0,holoFade=1,spinAngle=0;
 
 const S=id=>document.getElementById(id);
 const scoreEl=S('score'), progEl=S('progress'), levelTagEl=S('levelTag'), flashEl=S('perfectFlash');
@@ -2144,6 +2158,36 @@ function renderTower(cv,blocks,withCrown){
   }
   c.restore();
 }
+// Same idea as renderTower, but rotates every block's footprint around the vertical axis
+// by `angle` before drawing. Scale/anchor are fixed from the un-rotated fit (shrunk a bit
+// for headroom) so the silhouette holds a steady size and never clips as it spins, instead
+// of being recomputed — and breathing in size — every frame.
+function renderTowerSpin(cv,blocks,angle){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const rect=cv.getBoundingClientRect();
+  const cw=Math.max(rect.width,80), chh=Math.max(rect.height,160);
+  cv.width=cw*dpr; cv.height=chh*dpr;
+  const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,cw,chh);
+  if(!blocks.length) return;
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  for(const b of blocks){ for(const q of b.poly) for(const Y of [b.y,b.y+b.h]){
+    const p=proj(q[0],Y,q[1]);
+    minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); } }
+  minY -= crownHeight()*1.08;
+  const pad=8;
+  const sc=Math.min((cw-pad*2)/(maxX-minX||1),(chh-pad*2)/(maxY-minY||1))*0.8;
+  const cosA=Math.cos(angle), sinA=Math.sin(angle);
+  c.save();
+  c.translate(cw/2-(minX+maxX)/2*sc, chh-pad-maxY*sc);
+  c.scale(sc,sc);
+  for(const b of blocks){
+    const rp=b.poly.map(q=>[q[0]*cosA-q[1]*sinA, q[0]*sinA+q[1]*cosA]);
+    if(!(b.isSpire && L().crown==='none')) drawPrismLite(c,rp,b.y,b.h,b.i);
+    if(b.isSpire){ const ct=polyCentroid(rp); drawCrown(c, proj(ct[0],b.y+b.h,ct[1]), 1, 1, false, true); }
+  }
+  c.restore();
+}
 
 /* ==================== RESULT ==================== */
 function finish(won){
@@ -2398,6 +2442,7 @@ S('menuBtn').onclick=e=>{ e.stopPropagation();
   else if(state==='menu'||state==='intro'){ paused=true; showPanel('menuOpts'); sndClick(); }
 };
 S('btnResume').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); };
+S('btnIntroStart').onclick=e=>{ e.stopPropagation(); sndClick(); startPlaying(); };
 S('btnRestart').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); reset(); };
 S('btnMainMenu').onclick=e=>{ e.stopPropagation(); sndClick(); closePanel(); showMenu(); };
 S('btnResMainMenu').onclick=e=>{ e.stopPropagation(); sndClick(); S('resultScreen').classList.remove('visible');
@@ -2531,6 +2576,7 @@ function showIntro(){
   }
   renderDots('introDots',curLevel);
   reset();
+  spinAngle=0;
   setTimeout(()=>S('introScreen').classList.add('visible'),60);
 }
 function startPlaying(){ S('introScreen').classList.remove('visible'); state='playing'; showHUD(); reset(); }
@@ -2553,7 +2599,6 @@ function tap(e){
       if(progress.lastMode==='free'){ startFreePlay(); }
       else { isFree=false; showIntro(); }
     },520); }
-  else if(state==='intro'){ startPlaying(); }
   else if(state==='playing'){ place(); }
   else if(state==='result'){
     S('resultScreen').classList.remove('visible');
@@ -2647,6 +2692,7 @@ function frame(now){
     if(shakeT>0) shakeT-=.016*dt;
     const wantHolo=(state==='playing'||state==='intro')&&!started&&!isFree;
     holoFade+=((wantHolo?1:0)-holoFade)*.09*dt;
+    if(state==='intro') spinAngle+=0.012*dt;
   }
 
   ctx.clearRect(0,0,W,H);
@@ -2655,7 +2701,10 @@ function frame(now){
   const fade=Math.min(camY/3000,.22);
   if(fade>0){ ctx.fillStyle='rgba(255,255,255,'+fade+')'; ctx.fillRect(0,0,W,H); }
 
-  if((state==='playing'||state==='intro')&&!isFree) drawHologram();
+  // During intro the big spinning preview already shows the target — the small corner
+  // hologram is only useful once you're actually playing (pre-tap tutorial guidance).
+  if(state==='playing'&&!isFree) drawHologram();
+  if(state==='intro'&&!isFree) renderTowerSpin(S('introSpinCv'), idealBlocks(), spinAngle);
 
   ctx.save();
   let ox=W/2, oy=H*.82+camY;
