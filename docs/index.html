@@ -304,6 +304,10 @@
   #matchScore { margin-top:10px; font-size:38px; font-weight:200; color:#fff; letter-spacing:2px; }
   #matchLabel { font-size:10px; letter-spacing:5px; color:rgba(255,255,255,.6); font-weight:600; }
   #matchGrade { margin-top:5px; font-size:11px; letter-spacing:4px; font-weight:700; color:#ffe08a; }
+  #resBestTime { margin-top:10px; font-size:10px; letter-spacing:2px; font-weight:600;
+    color:rgba(255,255,255,.65); display:none; }
+  #resBestTime.show { display:block; }
+  #resBestTime b { color:#8ae0b8; }
   .ready-msg { margin-top:22px; font-size:16px; font-weight:500; letter-spacing:1.4px; line-height:1.8;
     color:rgba(255,255,255,.95); text-shadow:0 2px 10px rgba(0,0,0,.4); max-width:82vw; }
   .hearts-explainer { margin-top:16px; font-size:11px; font-weight:400; letter-spacing:.5px; line-height:1.6;
@@ -466,6 +470,7 @@
   <div id="matchScore">0%</div>
   <div id="matchLabel">ACCURACY</div>
   <div id="matchGrade">&mdash;</div>
+  <div id="resBestTime"></div>
   <div class="ready-msg" id="readyMsg" style="display:none">NOW YOU'RE READY TO MOVE ON<br>TO THE BIG CITIES &mdash; READY?
     <div class="hearts-explainer"><span class="h">&hearts;</span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
   </div>
@@ -814,13 +819,14 @@ function loadProgress(){
       ageBand: p.ageBand||'',
       muted: !!p.muted,
       levelBest: (p.levelBest && typeof p.levelBest==='object') ? p.levelBest : {},
+      levelBestTime: (p.levelBestTime && typeof p.levelBestTime==='object') ? p.levelBestTime : {},
       freeConfig: (p.freeConfig && typeof p.freeConfig==='object') ? p.freeConfig : null,
       lastMode: p.lastMode==='free' ? 'free' : 'level',
       dailyStreak: p.dailyStreak|0,
       dailyLastDate: p.dailyLastDate||'',
       dailyLastResult: (p.dailyLastResult && typeof p.dailyLastResult==='object') ? p.dailyLastResult : null }; }
   }catch(e){}
-  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'', muted:false, levelBest:{}, freeConfig:null, lastMode:'level', dailyStreak:0, dailyLastDate:'', dailyLastResult:null };
+  return { highestUnlocked:0, unlockedAll:false, lastLevel:0, hearts:MAX_HEARTS, lastHeartDay:'', noAds:false, ageBand:'', muted:false, levelBest:{}, levelBestTime:{}, freeConfig:null, lastMode:'level', dailyStreak:0, dailyLastDate:'', dailyLastResult:null };
 }
 function saveProgress(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); }catch(e){} }
 let progress = loadProgress();
@@ -1064,7 +1070,7 @@ function haptic(kind){
 }
 
 /* ==================== STATE ==================== */
-let state='menu', paused=false, started=false;
+let state='menu', paused=false, started=false, runStartTime=null;
 let stack=[], mover=null, debris=[], sparks=[];
 let score=0,perfects=0,combo=0,totalPerfects=0;
 let camY=0,camTarget=0,shakeT=0,holoFade=1,spinAngle=0;
@@ -2221,7 +2227,7 @@ function refreshMover(){ mover.poly = translate(mover.basePoly, mover.x-mover.ic
 /* ==================== PLACE ==================== */
 function place(){
   if(!mover) return;
-  if(!started) hideHearts();
+  if(!started){ hideHearts(); runStartTime=performance.now(); }
   started=true;
   const A=mover.axis, ai=A==='x'?0:1;
   const icx=mover.icx, icz=mover.icz;
@@ -2372,10 +2378,21 @@ function finish(won){
   if(won) sndWin();
   const isTutorialWin = !isDaily && curLevel===0 && won;
   S('compareWrap').style.display = isTutorialWin ? 'none' : 'flex';
-  ['resFloors','matchScore','matchLabel','matchGrade'].forEach(id=>S(id).style.display = isTutorialWin ? 'none' : '');
+  ['resFloors','matchScore','matchLabel','matchGrade','resBestTime'].forEach(id=>S(id).style.display = isTutorialWin ? 'none' : '');
   S('readyMsg').style.display = isTutorialWin ? 'block' : 'none';
   const acc=accuracy();
-  if(won && !isDaily && curLevel>0 && acc>(progress.levelBest[curLevel]||0)){ progress.levelBest[curLevel]=acc; saveProgress(); }
+  // Build time only means anything for a genuine completed run — timed from the first block
+  // you actually place (see place()), not from when the intro screen sits there waiting for
+  // a tap. Tracked per-level locally so the result screen can show a personal best; this is
+  // also exactly the data a real cross-player leaderboard would need later.
+  const elapsedSec = (won && runStartTime!=null) ? (performance.now()-runStartTime)/1000 : null;
+  let newBestAcc=false, newBestTime=false;
+  if(won && !isDaily && curLevel>0){
+    if(acc>(progress.levelBest[curLevel]||0)){ progress.levelBest[curLevel]=acc; newBestAcc=true; }
+    const prevTime=progress.levelBestTime[curLevel];
+    if(elapsedSec!=null && (prevTime==null || elapsedSec<prevTime)){ progress.levelBestTime[curLevel]=elapsedSec; newBestTime=true; }
+    saveProgress();
+  }
   if(isDaily){
     S('resEyebrow').textContent = won ? 'DAILY CHALLENGE COMPLETE' : 'DAILY CHALLENGE — TOWER COLLAPSED';
     S('resHint').textContent = 'TAP TO CONTINUE';
@@ -2384,10 +2401,18 @@ function finish(won){
     S('resHint').textContent = won ? (curLevel>=LEVELS.length-1 ? 'TAP TO FINISH' : 'TAP FOR NEXT CITY') : 'TAP TO RETRY';
   }
   S('resTitle').textContent = L().name;
-  S('resFloors').innerHTML = 'FLOORS&nbsp;<b>'+score+' / '+N+'</b>&nbsp;&nbsp;&middot;&nbsp;&nbsp;PERFECT&nbsp;<b>'+perfects+'</b>';
+  const timeStr = elapsedSec!=null ? '&nbsp;&nbsp;&middot;&nbsp;&nbsp;TIME&nbsp;<b>'+elapsedSec.toFixed(1)+'s</b>' : '';
+  S('resFloors').innerHTML = 'FLOORS&nbsp;<b>'+score+' / '+N+'</b>&nbsp;&nbsp;&middot;&nbsp;&nbsp;PERFECT&nbsp;<b>'+perfects+'</b>'+timeStr;
   S('matchScore').textContent = acc+'%';
   S('matchLabel').textContent = 'ACCURACY';
   S('matchGrade').textContent = grade(acc);
+  const bestTimeEl=S('resBestTime');
+  if(newBestTime || newBestAcc){
+    bestTimeEl.innerHTML = (newBestTime ? 'NEW BEST TIME &middot; <b>'+elapsedSec.toFixed(1)+'s</b>' : '')
+      + (newBestTime && newBestAcc ? ' &middot; ' : '')
+      + (newBestAcc ? 'NEW BEST ACCURACY' : '');
+    bestTimeEl.classList.add('show');
+  } else bestTimeEl.classList.remove('show');
   S('resHint').dataset.won = won ? '1' : '0';
   S('resHint').dataset.free='0';
   S('resHint').dataset.daily = isDaily ? '1' : '0';
