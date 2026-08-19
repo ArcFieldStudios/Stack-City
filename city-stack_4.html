@@ -797,6 +797,12 @@ function applyDailyConfig(cfg){
 
 const SAVE_KEY='citystack_progress_v1';
 const MAX_HEARTS = 5;
+// Continuing with a heart is capped at 2 per attempt, regardless of how many hearts you have
+// stocked up — otherwise a big heart bank turns "keep building" into effectively unlimited
+// lives, which flattens the challenge. Hitting the cap doesn't stop you earning/buying more
+// hearts for the NEXT attempt, it just ends this one's continues.
+const MAX_HEART_CONTINUES = 2;
+let heartsUsedThisRun = 0;
 function loadProgress(){
   try{ const raw=localStorage.getItem(SAVE_KEY); if(raw){ const p=JSON.parse(raw);
     return { highestUnlocked: Math.max(0, Math.min(LEVELS.length-1, p.highestUnlocked|0)),
@@ -2162,7 +2168,7 @@ function reset(){
   computeCenter();
   stack=[]; debris=[]; sparks=[]; freeHues={};
   score=0; perfects=0; combo=0; camY=0; camTarget=0;
-  started=false; holoFade=1;
+  started=false; holoFade=1; heartsUsedThisRun=0;
   const base=plateAt(0);
   stack.push({ poly:base, cx:0, cz:0, y:0, h:FH(), i:0, isSpire:false });
   spawnMover(); updateHUD(); tutorReset();
@@ -2359,7 +2365,7 @@ function finish(won){
   // Daily Challenge is a single clean attempt for everyone — no heart continues, so a streak
   // (and eventually a leaderboard score) means the same thing regardless of how many hearts
   // or ads someone has access to.
-  const canContinue = !isDaily && !won && stack.length>0 && stack.length<=N;
+  const canContinue = !isDaily && !won && stack.length>0 && stack.length<=N && heartsUsedThisRun<MAX_HEART_CONTINUES;
   S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
   S('btnWatchAd').classList.toggle('show', !isDaily && progress.hearts<MAX_HEARTS);
@@ -2409,7 +2415,7 @@ function finish(won){
 }
 function finishFree(){
   state='result'; mover=null;
-  const canContinue = stack.length>0;
+  const canContinue = stack.length>0 && heartsUsedThisRun<MAX_HEART_CONTINUES;
   S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
   S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
@@ -2680,6 +2686,7 @@ S('btnHeartPlus').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
 // real level past the tutorial, and Free Play) and the big tutorial popup's own button below.
 function useHeartAndResume(){
   consumeHeart();
+  heartsUsedThisRun++;
   S('resultScreen').classList.remove('visible');
   transitioning=true;
   setTimeout(()=>{
