@@ -690,19 +690,30 @@ function petronasPlate(t){
   return dedupe(ensureCCW(pts));
 }
 /* GREAT PYRAMID — a true straight-sided pyramid: wide square base tapering linearly (not
-   curved, unlike every other level here) all the way to a point, no crown ornament needed. */
+   curved, unlike every other level here) all the way to a blunt tip, no crown ornament needed.
+   Deliberately much wider relative to its height than every other level — a squat, fat
+   silhouette instead of the slender towers everywhere else — and the taper is stopped short
+   of a true point so the tip reads as a flat-ish cap rather than a sharp needle. */
 function pyramidPlate(t){
-  const R = R0*1.6*(1 - 0.98*t);
-  return nGon(4, Math.max(R, R0*0.03), Math.PI/4);
+  const R = R0*2.6*(1 - 0.94*t);
+  return nGon(4, Math.max(R, R0*0.16), Math.PI/4);
 }
 /* MERDEKA 118 — tapering faceted diamond plan (the real tower's keris-blade-inspired
-   cross-section) with a few large stepped setbacks in the upper third, up to the slender
-   Kristal spire. */
+   cross-section) with a few large stepped setbacks, then a genuine flat roof (not a taper to a
+   point like every other level's shaft here) for the last stretch of floors. The very last real
+   floor keeps that same flat-roof size but slides sideways by more than its own radius, so the
+   roof deck visibly cantilevers to one corner instead of staying centred — that shifted floor is
+   also what the auto-added spire floor uses (both it and the last real floor call plate(1);
+   the engine gives them the identical t, so by construction they're always the same shape and
+   position, the same trick bigBenPlate's own clock-stage/spire transition relies on), so the
+   needle crown launches from that corner too, off to the side, not from the tower's centreline. */
 function merdekaPlate(t){
+  const tt=Math.min(t,0.86);   // freeze the taper into a flat roof before the final corner shift
   let step=1;
-  if(t>0.55) step -= Math.min(Math.floor((t-0.55)/0.14),3)*0.14;
-  const R = R0*0.5*(1 - 0.55*t)*step;
-  return radial(32, Math.max(R,R0*0.03), Math.PI/8, 0.09, 4);
+  if(tt>0.55) step -= Math.min(Math.floor((tt-0.55)/0.14),3)*0.14;
+  const R = R0*0.5*(1 - 0.55*tt)*step;
+  const poly = radial(32, Math.max(R,R0*0.13), Math.PI/8, 0.09, 4);
+  return t>=0.995 ? translate(poly, R*1.05, -R*1.05) : poly;
 }
 /* TUTORIAL — plain, wide, forgiving square used only to teach the core tap-to-drop feel */
 function tutorialPlate(t){
@@ -722,7 +733,7 @@ const LEVELS=[
     crown:'gothic', floorH:15, plate:bigBenPlate,
     pal:{h0:38,h1:40, s0:12,s1:7, l0:68,l1:85} },
   { name:'GREAT PYRAMID', city:'GIZA', metresTxt:'138.8 M', floors:32, bg:'giza',
-    crown:'none', floorH:15, plate:pyramidPlate,
+    crown:'none', floorH:7, plate:pyramidPlate,
     pal:{h0:38,h1:34, s0:26,s1:18, l0:66,l1:90} },
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
     crown:'none', floorH:16, plate:shardPlate,
