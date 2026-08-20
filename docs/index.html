@@ -689,6 +689,21 @@ function petronasPlate(t){
     pts.push([Math.cos(th)*r, Math.sin(th)*r]); }
   return dedupe(ensureCCW(pts));
 }
+/* GREAT PYRAMID — a true straight-sided pyramid: wide square base tapering linearly (not
+   curved, unlike every other level here) all the way to a point, no crown ornament needed. */
+function pyramidPlate(t){
+  const R = R0*1.6*(1 - 0.98*t);
+  return nGon(4, Math.max(R, R0*0.03), Math.PI/4);
+}
+/* MERDEKA 118 — tapering faceted diamond plan (the real tower's keris-blade-inspired
+   cross-section) with a few large stepped setbacks in the upper third, up to the slender
+   Kristal spire. */
+function merdekaPlate(t){
+  let step=1;
+  if(t>0.55) step -= Math.min(Math.floor((t-0.55)/0.14),3)*0.14;
+  const R = R0*0.5*(1 - 0.55*t)*step;
+  return radial(32, Math.max(R,R0*0.03), Math.PI/8, 0.09, 4);
+}
 /* TUTORIAL — plain, wide, forgiving square used only to teach the core tap-to-drop feel */
 function tutorialPlate(t){
   const R = R0*(0.74 - 0.10*t);
@@ -706,6 +721,9 @@ const LEVELS=[
   { name:'BIG BEN', city:'LONDON', metresTxt:'96 M', floors:30, bg:'londonday',
     crown:'gothic', floorH:15, plate:bigBenPlate,
     pal:{h0:38,h1:40, s0:12,s1:7, l0:68,l1:85} },
+  { name:'GREAT PYRAMID', city:'GIZA', metresTxt:'138.8 M', floors:32, bg:'giza',
+    crown:'none', floorH:15, plate:pyramidPlate,
+    pal:{h0:38,h1:34, s0:26,s1:18, l0:66,l1:90} },
   { name:'THE SHARD', city:'LONDON', metresTxt:'309.6 M', floors:36, bg:'londonnight',
     crown:'none', floorH:16, plate:shardPlate,
     pal:{h0:206,h1:208, s0:14,s1:8, l0:62,l1:88} },
@@ -727,6 +745,9 @@ const LEVELS=[
   { name:'SHANGHAI TOWER', city:'SHANGHAI', metresTxt:'632 M', floors:84, bg:'shanghai',
     crown:'domecap', floorH:15, plate:shanghaiPlate,
     pal:{h0:188,h1:196, s0:32,s1:20, l0:55,l1:80} },
+  { name:'MERDEKA 118', city:'KUALA LUMPUR', metresTxt:'678.9 M', floors:88, bg:'merdeka118',
+    crown:'needle', floorH:15, plate:merdekaPlate,
+    pal:{h0:28,h1:24, s0:22,s1:14, l0:38,l1:70} },
   { name:'BURJ KHALIFA', city:'DUBAI', metresTxt:'828 M', floors:92, bg:'dubai',
     crown:'needle', floorH:15, plate:burjPlate,
     pal:{h0:207,h1:203, s0:16,s1:9, l0:64,l1:89} },
@@ -1167,6 +1188,15 @@ function malaysiaFlag(c,x,y,w,h){
   c.beginPath(); c.arc(x+w*0.27,y+h*0.26,h*0.12,0,7); c.fill(); c.restore();
   c.fillStyle='#ffcc00'; star5(c,x+w*0.33,y+h*0.30,h*0.09,0.2);
 }
+function egyptFlag(c,x,y,w,h){
+  c.fillStyle='#ce1126'; c.fillRect(x,y,w,h/3);
+  c.fillStyle='#fff'; c.fillRect(x,y+h/3,w,h/3);
+  c.fillStyle='#000'; c.fillRect(x,y+h*2/3,w,h/3);
+  c.fillStyle='#c09a3e';
+  c.beginPath(); c.arc(x+w/2,y+h/2,h*0.14,0,7); c.fill();
+  c.beginPath(); c.moveTo(x+w/2-h*0.1,y+h*0.44); c.lineTo(x+w/2+h*0.1,y+h*0.44);
+  c.lineTo(x+w/2,y+h*0.62); c.closePath(); c.fill();
+}
 function japanFlag(c,x,y,w,h){
   c.fillStyle='#fff'; c.fillRect(x,y,w,h);
   c.fillStyle='#bc002d';
@@ -1187,7 +1217,7 @@ function pole(c,flagFn,x,groundY,poleH,fw){
 
 /* ==================== SCENES ==================== */
 const scenes={};
-function buildAllScenes(){ ['tutorial','riodejaneiro','londonday','londonnight','tokyo','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur'].forEach(k=>scenes[k]=buildScene(k)); }
+function buildAllScenes(){ ['tutorial','riodejaneiro','londonday','londonnight','tokyo','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur','giza','merdeka118'].forEach(k=>scenes[k]=buildScene(k)); }
 function newSceneCanvas(){ const cv=document.createElement('canvas'); cv.width=W*DPR; cv.height=H*DPR;
   const c=cv.getContext('2d'); c.setTransform(DPR,0,0,DPR,0,0); return {cv,c}; }
 function clouds(c,horizon,alpha){
@@ -1737,6 +1767,83 @@ function buildScene(key){
     pole(c,malaysiaFlag,W*.34,horizon+6,36*u,22*u);
     pole(c,malaysiaFlag,W*.56,horizon+6,42*u,25*u);
     pole(c,malaysiaFlag,W*.9,horizon+6,38*u,23*u);
+  }
+
+  else if(key==='giza'){
+    const sky=c.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#5f9bcf'); sky.addColorStop(.55,'#cfd9c8'); sky.addColorStop(1,'#f2ddb0');
+    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
+    c.beginPath(); c.arc(W*.74,horizon*.18,28,0,7); c.fillStyle='rgba(255,244,215,.95)';
+    c.shadowColor='rgba(255,236,190,.85)'; c.shadowBlur=44; c.fill(); c.shadowBlur=0;
+    clouds(c,horizon,.18); // desert sky stays mostly clear — just a wisp, not the lush cloud cover elsewhere
+    // low sand dunes instead of jungle/city — nothing built on this horizon but the necropolis itself
+    c.fillStyle='rgba(214,178,120,.55)';
+    c.beginPath(); c.moveTo(0,horizon);
+    for(let i=0;i<=8;i++){ c.lineTo(i/8*W,horizon-(10+Math.abs(Math.sin(i*1.1+0.4))*22)*u); }
+    c.lineTo(W,horizon); c.closePath(); c.fill();
+    // the Giza necropolis, descending: Khufu (this level's own tower), Khafre (with its real
+    // surviving limestone capstone remnant), Menkaure, smallest and furthest right
+    function pyramidSil(px,base,ph,capRemnant){
+      const g=c.createLinearGradient(px-base/2,0,px+base/2,0);
+      g.addColorStop(0,'#a9895c'); g.addColorStop(.5,'#cdae7c'); g.addColorStop(1,'#8a6c46');
+      c.fillStyle=g;
+      c.beginPath(); c.moveTo(px-base/2,horizon); c.lineTo(px,horizon-ph); c.lineTo(px+base/2,horizon); c.closePath(); c.fill();
+      if(capRemnant){ c.fillStyle='rgba(224,214,190,.75)';
+        c.beginPath(); c.moveTo(px-base*0.09,horizon-ph*0.86); c.lineTo(px,horizon-ph); c.lineTo(px+base*0.09,horizon-ph*0.86); c.closePath(); c.fill(); }
+    }
+    pyramidSil(W*.58, 210*u, 150*u, false);   // Khufu — the level's own subject, largest
+    pyramidSil(W*.40, 168*u, 132*u, true);    // Khafre — slightly smaller, capstone still visible
+    pyramidSil(W*.24, 108*u, 78*u, false);    // Menkaure — smallest, furthest from the shaft
+    // the Sphinx, crouching low in the foreground haze
+    c.fillStyle='rgba(150,120,80,.6)';
+    const sx=W*.76, sy=horizon;
+    c.beginPath(); c.moveTo(sx-46*u,sy); c.lineTo(sx-46*u,sy-16*u); c.lineTo(sx-16*u,sy-16*u);
+    c.lineTo(sx-10*u,sy-34*u); c.lineTo(sx+2*u,sy-34*u); c.lineTo(sx+8*u,sy-18*u); c.lineTo(sx+30*u,sy-18*u);
+    c.lineTo(sx+30*u,sy); c.closePath(); c.fill();
+    // sand ground + a small palm-lined oasis, no grass this level
+    const grd=c.createLinearGradient(0,horizon,0,H);
+    grd.addColorStop(0,'#d9b877'); grd.addColorStop(1,'#b98f52');
+    c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
+    palm(c,W*.09,horizon+8,u*1.05); palm(c,W*.15,horizon+10,u*0.9);
+    pole(c,egyptFlag,W*.32,horizon+6,40*u,24*u);
+    pole(c,egyptFlag,W*.62,horizon+6,36*u,22*u);
+    pole(c,egyptFlag,W*.88,horizon+6,42*u,25*u);
+  }
+
+  else if(key==='merdeka118'){
+    // Same city as the Petronas Tower level, deliberately a different hour and framing so it
+    // doesn't just reuse that level's backdrop with a different tower dropped in front of it —
+    // golden-hour instead of midday, and this time Merdeka 118 is the hero silhouette while
+    // Petronas gets the small supporting cameo (a mirror of the nod the other way).
+    const sky=c.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#5a75ad'); sky.addColorStop(.5,'#d99b72'); sky.addColorStop(1,'#f2c894');
+    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
+    c.fillStyle='rgba(255,224,180,.95)'; c.beginPath(); c.arc(W*.26,horizon*.22,24,0,7); c.fill();
+    clouds(c,horizon,.4);
+    c.fillStyle='rgba(70,90,70,.4)';
+    c.beginPath(); c.moveTo(0,horizon);
+    for(let i=0;i<=8;i++){ c.lineTo(i/8*W,horizon-(24+Math.abs(Math.sin(i*1.3+1))*36)*u); }
+    c.lineTo(W,horizon); c.closePath(); c.fill();
+    const sil='#4a4038';
+    c.fillStyle='rgba(90,80,72,.55)';
+    let x=0; while(x<W){ const w=20+Math.random()*32,h=36+Math.random()*80; c.fillRect(x,horizon-h,w,h); x+=w+6; }
+    // Petronas, now the small distant cameo, far right
+    c.strokeStyle='rgba(90,80,75,.55)'; c.lineWidth=9*u;
+    c.beginPath(); c.moveTo(W*.86,horizon); c.lineTo(W*.86,horizon-120*u); c.moveTo(W*.92,horizon); c.lineTo(W*.92,horizon-120*u); c.stroke();
+    c.lineWidth=2*u;
+    c.beginPath(); c.moveTo(W*.86,horizon-120*u); c.lineTo(W*.86,horizon-142*u); c.moveTo(W*.92,horizon-120*u); c.lineTo(W*.92,horizon-142*u); c.stroke();
+    // Menara KL Tower cameo, left
+    const mx=W*.14, mh=140*u;
+    c.fillStyle=sil; c.fillRect(mx-4*u,horizon-mh,8*u,mh);
+    c.fillStyle='#6b5f54'; c.beginPath(); c.ellipse(mx,horizon-mh*0.86,15*u,11*u,0,0,7); c.fill();
+    // ground + flags
+    const grd=c.createLinearGradient(0,horizon,0,H);
+    grd.addColorStop(0,'#8a9a68'); grd.addColorStop(1,'#5f6f48');
+    c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
+    palm(c,W*.32,horizon+8,u); palm(c,W*.6,horizon+8,u*1.1);
+    pole(c,malaysiaFlag,W*.2,horizon+6,38*u,23*u);
+    pole(c,malaysiaFlag,W*.5,horizon+6,42*u,25*u);
+    pole(c,malaysiaFlag,W*.78,horizon+6,36*u,22*u);
   }
 
   else if(key==='riodejaneiro'){
@@ -2526,7 +2633,8 @@ const FREE_UI={
   bg:[['Day','day'],['Dusk','dusk'],['Night','night'],['Snow','snow'],
       ['Rio de Janeiro','riodejaneiro'],['London Day','londonday'],['London Night','londonnight'],
       ['Tokyo','tokyo'],['Dubai','dubai'],['New York','nycplain'],['New York · WTC','nycwtc'],
-      ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
+      ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur'],
+      ['Giza','giza'],['Merdeka 118','merdeka118']],
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
   speed:['Slow','Medium','Fast'],
