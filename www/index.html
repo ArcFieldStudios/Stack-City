@@ -212,6 +212,9 @@
     border:1px solid rgba(255,255,255,.18); background:#1c2a44; }
   .carousel-preview.bg { flex:0 1 200px; aspect-ratio:3/4; }
   .carousel-preview.shape, .carousel-preview.color { flex:0 1 140px; aspect-ratio:1/1; }
+  /* Landscape, not square — the whole point is a block sliding sideways, so it needs the
+     horizontal room to actually read as motion rather than a cramped little wobble. */
+  .carousel-preview.speed { flex:0 1 220px; aspect-ratio:16/9; }
   .carousel-preview canvas { width:100%; height:100%; display:block; }
   .carousel-name { margin-top:9px; text-align:center; font-size:11px; letter-spacing:2.5px;
     font-weight:700; color:#ffe08a; }
@@ -838,7 +841,7 @@ if(progress.freeConfig){
   const fc=progress.freeConfig;
   if(FREE_SHAPES[fc.shape]) freeConfig.shape=fc.shape;
   if(fc.color==='rainbow' || fc.color==='random' || FREE_COLORS[fc.color]) freeConfig.color=fc.color;
-  if(fc.speed==='slow' || fc.speed==='medium' || fc.speed==='fast' || fc.speed==='random') freeConfig.speed=fc.speed;
+  if(fc.speed==='slow' || fc.speed==='medium' || fc.speed==='fast') freeConfig.speed=fc.speed;
   if(typeof fc.bg==='string') freeConfig.bg=fc.bg;
 }
 function isLevelUnlocked(i){ return progress.unlockedAll || i<=progress.highestUnlocked; }
@@ -2204,7 +2207,7 @@ function spawnMover(){
   let speed;
   if(isFree){
     const sp=freeConfig.speed;
-    const base = sp==='slow' ? 2.6 : sp==='fast' ? 5.8 : sp==='random' ? (2.6+Math.random()*3.4) : 3.9;
+    const base = sp==='slow' ? 2.6 : sp==='fast' ? 5.8 : 3.9;
     speed = base + Math.min(i*0.045,3.2);
   } else if(isDaily && dailyKind==='random'){
     const sp=DAILY_LEVEL.speedKey;
@@ -2526,7 +2529,7 @@ const FREE_UI={
       ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur']],
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
-  speed:['Slow','Medium','Fast','Random'],
+  speed:['Slow','Medium','Fast'],
 };
 // Draws one carousel's current-selection preview: the actual background scene, a flat shape
 // icon, or a plain colour swatch. Same canvas-scaling dance as every other preview in this
@@ -2588,9 +2591,57 @@ function drawCarouselPreview(cv, group, key){
     pc.strokeStyle='rgba(0,0,0,.3)'; pc.lineWidth=1.6; pc.stroke();
   }
 }
-// One carousel per visual option (background, shape, colour): a left/right arrow either side
-// of a preview showing exactly what that pick looks like, cycling one at a time instead of a
-// grid of small text chips. Speed has no visual to preview, so it stays a plain chip row.
+// Same base speeds the real mover uses (see setMover's `base` values) so the preview's
+// relative pacing — not just its label — actually matches what you'll feel in a run.
+const SPEED_PREVIEW_BASE={ slow:2.6, medium:3.9, fast:5.8 };
+let speedPreviewCv=null, speedPreviewKey='slow', speedPreviewX=0, speedPreviewDir=1, speedPreviewLastT=null;
+// A little looping demo: a fixed "stack" block with a coloured mover block sliding back and
+// forth above it, exactly like a real placement — just so the speed choice is obvious before
+// you've committed to it. Driven every frame from frame() while its canvas is attached.
+function drawSpeedPreview(cv, now){
+  const rect=cv.getBoundingClientRect(), w=Math.max(rect.width,10), h=Math.max(rect.height,10);
+  const dpr=Math.min(window.devicePixelRatio||1,2), pw=Math.round(w*dpr), ph=Math.round(h*dpr);
+  if(cv.width!==pw||cv.height!==ph){ cv.width=pw; cv.height=ph; }
+  const pc=cv.getContext('2d'); pc.setTransform(dpr,0,0,dpr,0,0); pc.clearRect(0,0,w,h);
+
+  const blockW=Math.min(w,h)*0.34, blockH=blockW*0.62;
+  const baseY=h*0.7, moveY=h*0.32;
+  const half=Math.max((w-blockW*1.6)/2,4);
+  const vel=SPEED_PREVIEW_BASE[speedPreviewKey]*(half/72);
+
+  if(speedPreviewLastT==null) speedPreviewLastT=now;
+  const dtMs=Math.min(Math.max(now-speedPreviewLastT,0),80); speedPreviewLastT=now;
+  speedPreviewX+=vel*speedPreviewDir*(dtMs/1000);
+  if(speedPreviewX>half){ speedPreviewX=half; speedPreviewDir=-1; }
+  if(speedPreviewX<-half){ speedPreviewX=-half; speedPreviewDir=1; }
+
+  function rr(x,y,ww,hh,r){
+    pc.beginPath();
+    pc.moveTo(x+r,y);
+    pc.arcTo(x+ww,y,x+ww,y+hh,r);
+    pc.arcTo(x+ww,y+hh,x,y+hh,r);
+    pc.arcTo(x,y+hh,x,y,r);
+    pc.arcTo(x,y,x+ww,y,r);
+    pc.closePath();
+  }
+
+  pc.strokeStyle='rgba(255,255,255,.14)'; pc.lineWidth=1;
+  pc.beginPath(); pc.moveTo(w/2-half-blockW/2,moveY); pc.lineTo(w/2+half+blockW/2,moveY); pc.stroke();
+
+  pc.fillStyle='rgba(255,255,255,.18)';
+  rr(w/2-blockW/2, baseY-blockH/2, blockW, blockH, 6); pc.fill();
+  pc.strokeStyle='rgba(255,255,255,.4)'; pc.lineWidth=1.2; pc.stroke();
+
+  const mx=w/2+speedPreviewX;
+  const grad=pc.createLinearGradient(mx-blockW/2,0,mx+blockW/2,0);
+  grad.addColorStop(0,'#ffd27a'); grad.addColorStop(1,'#ff9d4d');
+  pc.fillStyle=grad;
+  rr(mx-blockW/2, moveY-blockH/2, blockW, blockH, 6); pc.fill();
+  pc.strokeStyle='rgba(0,0,0,.3)'; pc.lineWidth=1.4; pc.stroke();
+}
+// One carousel per visual option (background, shape, colour, speed): a left/right arrow either
+// side of a preview showing exactly what that pick looks/plays like, cycling one at a time
+// instead of a grid of small text chips.
 function buildCarousel(container, group){
   const entries=FREE_UI[group];
   const wrap=document.createElement('div'); wrap.className='carousel';
@@ -2630,27 +2681,50 @@ function buildCarousel(container, group){
   render();
   return { render };
 }
+// Speed's own carousel: same left/right-arrow shell as buildCarousel, but the preview is a
+// live looping animation (drawSpeedPreview) instead of a static drawing, so it needs its own
+// render/step wiring rather than going through drawCarouselPreview.
+function buildSpeedCarousel(container){
+  const entries=FREE_UI.speed;
+  const wrap=document.createElement('div'); wrap.className='carousel';
+  const lab=document.createElement('div'); lab.className='lab'; lab.textContent='SPEED';
+  const row=document.createElement('div'); row.className='carousel-row';
+  const prevBtn=document.createElement('button'); prevBtn.className='carousel-arrow'; prevBtn.textContent='‹';
+  const nextBtn=document.createElement('button'); nextBtn.className='carousel-arrow'; nextBtn.textContent='›';
+  const previewWrap=document.createElement('div'); previewWrap.className='carousel-preview speed';
+  const cv=document.createElement('canvas');
+  previewWrap.appendChild(cv);
+  const nameEl=document.createElement('div'); nameEl.className='carousel-name';
+  row.appendChild(prevBtn); row.appendChild(previewWrap); row.appendChild(nextBtn);
+  wrap.appendChild(lab); wrap.appendChild(row); wrap.appendChild(nameEl);
+
+  const indexOf=()=> entries.findIndex(e=>e.toLowerCase()===freeConfig.speed);
+  function render(){
+    const idx=Math.max(0,indexOf());
+    const label=entries[idx];
+    nameEl.textContent=label.toUpperCase();
+    speedPreviewKey=label.toLowerCase();
+  }
+  function step(dir){
+    const idx=indexOf(), next=(idx+dir+entries.length)%entries.length;
+    freeConfig.speed = entries[next].toLowerCase();
+    progress.freeConfig=freeConfig; saveProgress();
+    sndClick(); render();
+  }
+  prevBtn.onclick=e=>{ e.stopPropagation(); step(-1); };
+  nextBtn.onclick=e=>{ e.stopPropagation(); step(1); };
+  container.appendChild(wrap);
+  speedPreviewCv=cv; speedPreviewX=0; speedPreviewDir=1; speedPreviewLastT=null;
+  render();
+  drawSpeedPreview(cv, performance.now());
+  return { render };
+}
 function buildFreeOpts(){
   const body=S('freeOptsBody'); body.innerHTML='';
   buildCarousel(body,'bg');
   buildCarousel(body,'shape');
   buildCarousel(body,'color');
-
-  const wrap=document.createElement('div'); wrap.className='carousel';
-  const lab=document.createElement('div'); lab.className='lab'; lab.textContent='SPEED';
-  wrap.appendChild(lab);
-  const row=document.createElement('div'); row.className='optrow';
-  FREE_UI.speed.forEach(entry=>{
-    const [label,key]=Array.isArray(entry)?entry:[entry,entry.toLowerCase()];
-    const chip=document.createElement('button'); chip.className='chip';
-    chip.textContent=label;
-    if(freeConfig.speed===key) chip.classList.add('sel');
-    chip.onclick=e=>{ e.stopPropagation(); sndClick(); freeConfig.speed=key;
-      progress.freeConfig=freeConfig; saveProgress();
-      [...row.children].forEach(ch=>ch.classList.remove('sel')); chip.classList.add('sel'); };
-    row.appendChild(chip);
-  });
-  wrap.appendChild(row); body.appendChild(wrap);
+  buildSpeedCarousel(body);
 }
 S('menuBtn').onclick=e=>{ e.stopPropagation();
   if(state==='playing') openPause();
@@ -2938,6 +3012,7 @@ let last=performance.now();
 function frame(now){
   const dt=Math.min((now-last)/16.67,3); last=now;
   updateAmbient();
+  if(speedPreviewCv && speedPreviewCv.isConnected) drawSpeedPreview(speedPreviewCv, now);
   if(!paused){
     if(mover&&state==='playing'){
       const range=250, c0=mover.icx, c1=mover.icz;
