@@ -60,6 +60,11 @@
     background:rgba(255,80,110,.25); border-color:rgba(255,120,140,.6); display:none; }
   #btnUseHearts.show { display:inline-block; }
   #btnUseHearts .h { color:#ff6a80; margin-right:6px; }
+  /* A custom rounded heart, not the system font's ♥ glyph — that renders with a sharp,
+     narrow point at the bottom in most fonts; this one tapers to a soft, blunt tip instead,
+     the way an emoji heart does. Sized off font-size like the text it sits beside (1em square)
+     and coloured via currentColor so every existing colour/size rule below still applies as-is. */
+  .heart-ic { display:inline-block; width:1em; height:1em; vertical-align:-0.14em; fill:currentColor; }
 
   #heartBadge { position:fixed; top:calc(20px + env(safe-area-inset-top)); right:18px;
     z-index:30; display:none; align-items:center; gap:5px; padding:7px 13px;
@@ -350,7 +355,7 @@
 
 <div id="menuBtn" class="no-tap"><span></span></div>
 <button id="btnNoAds" class="no-tap">NO ADS</button>
-<div id="heartBadge" class="no-tap"><span class="heart">♥</span><span id="heartCount">5</span><button id="btnHeartPlus" class="no-tap">+</button></div>
+<div id="heartBadge" class="no-tap"><span class="heart"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span><span id="heartCount">5</span><button id="btnHeartPlus" class="no-tap">+</button></div>
 <div id="toastMsg" class="no-tap"></div>
 <div id="adOverlay" class="no-tap">
   <div class="title">SPONSORED · REWARDED AD</div>
@@ -361,9 +366,9 @@
 <div id="shopOverlay" class="no-tap">
   <div id="shopPanel">
     <h2>OUT OF HEARTS</h2>
-    <span class="heart-big">♥</span>
+    <span class="heart-big"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span>
     <h1>GET HEARTS</h1>
-    <button class="shop-btn ad" data-heart="ad"><span>WATCH AD</span><span class="price">+1 ♥</span></button>
+    <button class="shop-btn ad" data-heart="ad"><span>WATCH AD</span><span class="price">+1 <svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span></button>
     <button id="shopClose">CANCEL</button>
   </div>
 </div>
@@ -371,7 +376,7 @@
   <div id="heartPanel">
     <h2>KEEP BUILDING?</h2>
     <div class="heart-row">
-      <div class="heart-big-icon">♥</div>
+      <div class="heart-big-icon"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></div>
       <button id="btnHeartContinue" class="heart-use-btn">USE<br>HEART</button>
     </div>
     <p class="heart-explain" id="heartExplain">A heart gives you an extra life — keep building right where you left off.</p>
@@ -475,12 +480,12 @@
   <div id="matchGrade">&mdash;</div>
   <div id="resBestTime"></div>
   <div class="ready-msg" id="readyMsg" style="display:none">NOW YOU'RE READY TO MOVE ON<br>TO THE BIG CITIES &mdash; READY?
-    <div class="hearts-explainer"><span class="h">&hearts;</span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
+    <div class="hearts-explainer"><span class="h"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span> ONE THING FIRST: MISS TOO FAR AND YOUR TOWER COLLAPSES. USE A HEART TO KEEP BUILDING RIGHT WHERE YOU LEFT OFF. YOU START WITH 5 &mdash; WATCH AN AD OR WAIT FOR YOUR FREE DAILY HEART TO GET MORE.</div>
   </div>
   <div class="res-btn-hint" id="resHint">TAP TO CONTINUE</div>
-  <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h">♥</span>USE HEART</button>
-  <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h">♥</span>GET HEARTS</button>
-  <button class="no-tap res-menu-btn" id="btnWatchAd">WATCH AD +♥</button>
+  <button class="no-tap res-menu-btn" id="btnUseHearts"><span class="h"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span>USE HEART</button>
+  <button class="no-tap res-menu-btn" id="btnGetHearts"><span class="h"><svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></span>GET HEARTS</button>
+  <button class="no-tap res-menu-btn" id="btnWatchAd">WATCH AD +<svg class="heart-ic" viewBox="0 0 32 27" aria-hidden="true"><path d="M16,26 C11,22 2,15.5 2,9 C2,4.2 6,0.8 10.5,0.8 C13.3,0.8 15.2,2.4 16,4.6 C16.8,2.4 18.7,0.8 21.5,0.8 C26,0.8 30,4.2 30,9 C30,15.5 21,22 16,26 Z"/></svg></button>
   <button class="no-tap res-menu-btn" id="btnResMainMenu">MAIN MENU</button>
 </div>
 
@@ -2436,10 +2441,15 @@ function finish(won){
   // Daily Challenge is a single clean attempt for everyone — no heart continues, so a streak
   // (and eventually a leaderboard score) means the same thing regardless of how many hearts
   // or ads someone has access to.
-  const canContinue = !isDaily && !won && stack.length>0 && stack.length<=N && heartsUsedThisRun<MAX_HEART_CONTINUES;
+  // "continuable" = this loss could have been continued at all (ignoring whether the 2-per-
+  // attempt cap has already been spent) — used so WATCH AD still offers to stock hearts for
+  // later on a win/daily/total-wipe result exactly as before, and only disappears on a loss
+  // once this attempt's continues are actually used up (see canContinue below).
+  const continuable = !isDaily && !won && stack.length>0 && stack.length<=N;
+  const canContinue = continuable && heartsUsedThisRun<MAX_HEART_CONTINUES;
   S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
-  S('btnWatchAd').classList.toggle('show', !isDaily && progress.hearts<MAX_HEARTS);
+  S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS && (!continuable || canContinue));
   if(won) sndWin();
   const isTutorialWin = !isDaily && curLevel===0 && won;
   S('compareWrap').style.display = isTutorialWin ? 'none' : 'flex';
@@ -2505,10 +2515,11 @@ function finish(won){
 }
 function finishFree(){
   state='result'; mover=null;
-  const canContinue = stack.length>0 && heartsUsedThisRun<MAX_HEART_CONTINUES;
+  const continuable = stack.length>0;
+  const canContinue = continuable && heartsUsedThisRun<MAX_HEART_CONTINUES;
   S('btnUseHearts').classList.toggle('show', canContinue && progress.hearts>0);
   S('btnGetHearts').classList.toggle('show', canContinue && progress.hearts<=0);
-  S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+  S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS && (!continuable || canContinue));
   S('compareWrap').style.display='none';
   S('resFloors').style.display='none';
   S('matchGrade').style.display='none';
@@ -2806,7 +2817,7 @@ function closeShop(){ S('shopOverlay').classList.remove('show'); }
 // after the fact (shop, watch-ad) to decide whether the inline USE HEART button should
 // reappear.
 function canContinueNow(){
-  return state==='result' && stack.length>0 &&
+  return state==='result' && stack.length>0 && heartsUsedThisRun<MAX_HEART_CONTINUES &&
     (S('resHint').dataset.free==='1' || S('resHint').textContent==='TAP TO RETRY');
 }
 S('btnGetHearts').onclick=e=>{ e.stopPropagation(); sndClick(); openShop(); };
@@ -2818,14 +2829,15 @@ document.querySelectorAll('.shop-btn').forEach(btn=>{
         const cc=canContinueNow();
         S('btnUseHearts').classList.toggle('show', cc && progress.hearts>0);
         S('btnGetHearts').classList.toggle('show', cc && progress.hearts<=0);
-        S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
+        S('btnWatchAd').classList.toggle('show', cc && progress.hearts<MAX_HEARTS);
       }
     });
   };
 });
 S('btnWatchAd').onclick=e=>{ e.stopPropagation(); sndClick();
-  playAdForHeart(()=>{ S('btnWatchAd').classList.toggle('show', progress.hearts<MAX_HEARTS);
-    S('btnUseHearts').classList.toggle('show', canContinueNow() && progress.hearts>0);
+  playAdForHeart(()=>{ const cc=canContinueNow();
+    S('btnWatchAd').classList.toggle('show', cc && progress.hearts<MAX_HEARTS);
+    S('btnUseHearts').classList.toggle('show', cc && progress.hearts>0);
   });
 };
 function buyNoAds(){
