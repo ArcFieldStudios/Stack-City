@@ -638,6 +638,16 @@ function cnPlate(t){
   const k = 0.15*(1-podInf);
   return radial(30, R, -Math.PI/2, k, 3);
 }
+/* LEANING TOWER (PISA) — a round, gently tapering column, exactly like every other level here
+   in every way except one: each floor's plate is nudged a little further sideways than the
+   last as it rises, so the stack itself visibly leans by the time it's finished, the way the
+   real tower does. The per-floor nudge stays small (an easy tap-timing adjustment, not a
+   penalty), it's the accumulation over many floors that reads as a real lean. */
+function pisaPlate(t){
+  const R = R0*0.58*(1 - 0.12*t);
+  const lean = R0*0.42*Math.pow(t,1.15);
+  return translate(nGon(24, R, 0), lean, 0);
+}
 /* BIG BEN (ELIZABETH TOWER) — slender square Gothic shaft with a belfry near the top */
 function bigBenPlate(t){
   const base = 0.60 - 0.05*t;
@@ -717,6 +727,9 @@ const LEVELS=[
   { name:'HOW TO PLAY', city:'TUTORIAL', metresTxt:'LEARN THE BASICS', floors:10, bg:'tutorial',
     crown:'none', floorH:16, plate:tutorialPlate, isTutorial:true,
     pal:{h0:204,h1:204, s0:12,s1:12, l0:64,l1:80} },
+  { name:'LEANING TOWER', city:'PISA', metresTxt:'55.9 M', floors:18, bg:'pisa',
+    crown:'domecap', floorH:15, plate:pisaPlate,
+    pal:{h0:42,h1:38, s0:10,s1:6, l0:78,l1:92} },
   { name:'BIG BEN', city:'LONDON', metresTxt:'96 M', floors:30, bg:'londonday',
     crown:'gothic', floorH:15, plate:bigBenPlate,
     pal:{h0:38,h1:40, s0:12,s1:7, l0:68,l1:85} },
@@ -1184,6 +1197,11 @@ function malaysiaFlag(c,x,y,w,h){
   c.beginPath(); c.arc(x+w*0.27,y+h*0.26,h*0.12,0,7); c.fill(); c.restore();
   c.fillStyle='#ffcc00'; star5(c,x+w*0.33,y+h*0.30,h*0.09,0.2);
 }
+function italyFlag(c,x,y,w,h){
+  c.fillStyle='#009246'; c.fillRect(x,y,w/3,h);
+  c.fillStyle='#fff'; c.fillRect(x+w/3,y,w/3,h);
+  c.fillStyle='#ce2b37'; c.fillRect(x+w*2/3,y,w/3,h);
+}
 function egyptFlag(c,x,y,w,h){
   c.fillStyle='#ce1126'; c.fillRect(x,y,w,h/3);
   c.fillStyle='#fff'; c.fillRect(x,y+h/3,w,h/3);
@@ -1213,7 +1231,7 @@ function pole(c,flagFn,x,groundY,poleH,fw){
 
 /* ==================== SCENES ==================== */
 const scenes={};
-function buildAllScenes(){ ['tutorial','riodejaneiro','londonday','londonnight','tokyo','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur','giza'].forEach(k=>scenes[k]=buildScene(k)); }
+function buildAllScenes(){ ['tutorial','riodejaneiro','londonday','londonnight','tokyo','dubai','nycplain','nycwtc','tehran','toronto','shanghai','kualalumpur','giza','pisa'].forEach(k=>scenes[k]=buildScene(k)); }
 function newSceneCanvas(){ const cv=document.createElement('canvas'); cv.width=W*DPR; cv.height=H*DPR;
   const c=cv.getContext('2d'); c.setTransform(DPR,0,0,DPR,0,0); return {cv,c}; }
 function clouds(c,horizon,alpha){
@@ -1806,6 +1824,46 @@ function buildScene(key){
     pole(c,egyptFlag,W*.88,horizon+6,42*u,25*u);
   }
 
+  else if(key==='pisa'){
+    // Bright, clear Tuscan afternoon — the sunniest sky in the game, almost no cloud cover,
+    // and warm terracotta/cream tones throughout instead of anyone else's glass-and-steel city.
+    const sky=c.createLinearGradient(0,0,0,horizon);
+    sky.addColorStop(0,'#3f95d6'); sky.addColorStop(.6,'#8ecdec'); sky.addColorStop(1,'#fbf0cf');
+    c.fillStyle=sky; c.fillRect(0,0,W,horizon);
+    c.beginPath(); c.arc(W*.76,horizon*.16,30,0,7); c.fillStyle='rgba(255,248,220,.97)';
+    c.shadowColor='rgba(255,240,190,.9)'; c.shadowBlur=52; c.fill(); c.shadowBlur=0;
+    clouds(c,horizon,.25);
+    // soft rolling Tuscan hills, hazy in the distance
+    c.fillStyle='rgba(150,178,110,.5)';
+    c.beginPath(); c.moveTo(0,horizon);
+    for(let i=0;i<=8;i++){ c.lineTo(i/8*W,horizon-(16+Math.abs(Math.sin(i*1.5+0.6))*26)*u); }
+    c.lineTo(W,horizon); c.closePath(); c.fill();
+    // terracotta-roofed rooftops instead of the usual cool city block silhouette
+    let x=0; while(x<W){ const w=20+Math.random()*30,h=30+Math.random()*54;
+      c.fillStyle='rgba(214,198,168,.55)'; c.fillRect(x,horizon-h,w,h);
+      c.fillStyle='rgba(196,108,62,.6)'; c.fillRect(x-1,horizon-h,w+2,7*u); x+=w+6; }
+    // the Duomo di Pisa — striped white/grey marble facade and a shallow green-patina dome —
+    // and the round Baptistery beside it, the other two landmarks that share this square with
+    // the tower this level is actually about
+    const dx=W*.32, dw=90*u, dh=54*u;
+    c.fillStyle='#e9e2d2'; c.fillRect(dx,horizon-dh,dw,dh);
+    c.strokeStyle='rgba(150,140,120,.5)'; c.lineWidth=2*u;
+    for(let i=1;i<5;i++){ c.beginPath(); c.moveTo(dx,horizon-dh*i/5); c.lineTo(dx+dw,horizon-dh*i/5); c.stroke(); }
+    c.fillStyle='#8fae95';
+    c.beginPath(); c.ellipse(dx+dw*0.5,horizon-dh,dw*0.22,dw*0.15,0,Math.PI,0); c.fill();
+    const bx=dx-46*u, bh=34*u;
+    c.fillStyle='#ece5d5'; c.beginPath(); c.arc(bx,horizon-bh*0.5,bh*0.5,0,7); c.fill();
+    c.fillStyle='#8fae95'; c.beginPath(); c.arc(bx,horizon-bh*0.86,bh*0.28,Math.PI,0); c.fill();
+    // green lawn — the Piazza dei Miracoli is famously grass, not paving, unlike every other
+    // level's stone/sand ground
+    const grd=c.createLinearGradient(0,horizon,0,H);
+    grd.addColorStop(0,'#8fbf5a'); grd.addColorStop(1,'#6a9a44');
+    c.fillStyle=grd; c.fillRect(0,horizon,W,H-horizon);
+    cypress(c,W*.1,horizon+8,u); cypress(c,W*.17,horizon+9,u*0.85); cypress(c,W*.88,horizon+8,u);
+    pole(c,italyFlag,W*.28,horizon+6,38*u,23*u);
+    pole(c,italyFlag,W*.7,horizon+6,42*u,25*u);
+  }
+
   else if(key==='riodejaneiro'){
     const sky=c.createLinearGradient(0,0,0,horizon);
     sky.addColorStop(0,'#4fa8d8'); sky.addColorStop(.55,'#8fcbe0'); sky.addColorStop(1,'#f5dfa8');
@@ -1902,6 +1960,16 @@ function palmIsland(c,cx,cy,r,sandCol,flip){
   }
   c.lineWidth=r*.1; c.beginPath(); c.arc(0,-r*.1,r*1.02,Math.PI*1.18,Math.PI*(-0.18)); c.stroke();
   c.lineCap='butt'; c.restore();
+}
+function cypress(c,x,groundY,u){
+  c.fillStyle='#3a5a3a';
+  c.beginPath();
+  c.moveTo(x,groundY);
+  c.quadraticCurveTo(x-6*u,groundY-30*u, x-3*u,groundY-58*u);
+  c.quadraticCurveTo(x,groundY-70*u, x,groundY-78*u);
+  c.quadraticCurveTo(x,groundY-70*u, x+3*u,groundY-58*u);
+  c.quadraticCurveTo(x+6*u,groundY-30*u, x,groundY);
+  c.closePath(); c.fill();
 }
 function palm(c,x,groundY,u){
   c.strokeStyle='#6b5330'; c.lineWidth=4*u; c.lineCap='round';
@@ -2600,7 +2668,7 @@ const FREE_UI={
       ['Rio de Janeiro','riodejaneiro'],['London Day','londonday'],['London Night','londonnight'],
       ['Tokyo','tokyo'],['Dubai','dubai'],['New York','nycplain'],['New York · WTC','nycwtc'],
       ['Tehran','tehran'],['Toronto','toronto'],['Shanghai','shanghai'],['Kuala Lumpur','kualalumpur'],
-      ['Giza','giza']],
+      ['Giza','giza'],['Pisa','pisa']],
   shape:['Square','Triangle','Hexagon','Octagon','Circle','Star','Cross'],
   color:['Blue','Gold','Green','Red','Purple','White','Rainbow','Random'],
   speed:['Slow','Medium','Fast'],
